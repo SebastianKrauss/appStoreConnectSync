@@ -1,0 +1,35 @@
+name: CI
+
+# Everything here runs without App Store Connect credentials — that is the
+# whole point of keeping validation offline. A pull request from a fork can
+# therefore be checked as thoroughly as one from a branch.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: pip install -e .
+      - name: Self-test
+        run: python tests/selftest.py
+      - name: Validate the shipped scaffold
+        # The template data must stay loadable and within Apple's limits;
+        # if it does not, every new user starts from something broken.
+        run: ascsync validate
+      - name: Readiness runs and reports rather than crashing
+        # An empty scaffold is *supposed* to be short of a submission, so a
+        # non-zero exit is the expected outcome here. What must not happen is
+        # a traceback.
+        run: ascsync validate --readiness || test $? -eq 1

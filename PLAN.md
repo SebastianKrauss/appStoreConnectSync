@@ -42,9 +42,9 @@ Without these it is a shared folder, not a product.
       shipped scheme is a runnable example with placeholder ids rather than
       one game's private vocabulary.
 - [x] **A license.** Apache-2.0, with LICENSE and NOTICE in place. See below.
-- [ ] **Pin the supported Python versions.** It currently runs on 3.9 because
-      that was the system version. 3.9 is at the end of its life — raise the
-      floor to 3.10 or 3.11 and test against current Python in CI.
+- [x] **Supported Python versions pinned.** Floor raised to 3.10, tested in CI
+      against 3.10 through 3.13. As a side effect the urllib3/LibreSSL warning
+      that macOS's system 3.9 produced on every single run is gone.
 
 ## Stage 2 — dependable
 
@@ -54,8 +54,11 @@ Without these it is a shared folder, not a product.
       is missing are **recorded API responses**: capture real ones once,
       anonymise them, and run `push`/`pull` against them. Only that catches the
       class of bug the first real push exposed.
-- [ ] **CI.** Self-test plus `validate` on every push; nothing that needs
-      credentials.
+- [x] **CI.** Self-test plus `validate` on every push and pull request, across
+      four Python versions, with no credentials involved — so a fork's pull
+      request is checked as thoroughly as a branch. It also asserts that
+      `validate --readiness` on the empty scaffold *reports* rather than
+      crashes, since a fresh scaffold is supposed to be short of a submission.
 - [ ] **Several apps.** `ASCSYNC_PROJECT` already covers it (one directory per
       app). What is missing is proof that it holds up, and an example in the
       documentation.
