@@ -108,7 +108,7 @@ class ApiError(RuntimeError):
 
 class Client:
     def __init__(self, dry_run: bool = True, verbose: bool = False,
-                 log_requests: bool = True) -> None:
+                 log_requests: bool = True, profile: Optional[str] = None) -> None:
         if requests is None:
             raise SystemExit("requests is missing. Run: pip install -e . in the active venv")
         self.dry_run = dry_run
@@ -119,7 +119,7 @@ class Client:
         # pull and push without an API key.
         self.cassette = cassettelib.from_environment()
         replaying = bool(self.cassette) and self.cassette.mode != "record"
-        self.tokens = None if replaying else TokenProvider()
+        self.tokens = None if replaying else TokenProvider(profile)
         self.session = requests.Session()
         # A push makes calls in the thousands. Without a bigger pool, requests
         # keeps opening new connections until the OS runs out of ephemeral

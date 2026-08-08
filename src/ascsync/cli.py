@@ -46,7 +46,9 @@ from ascsync.resources import (ALL_DOMAINS, app_store, events as events_res,
 def build_context(dry_run: bool, args) -> domains.Context:
     app = paths.load_app_config()
     try:
-        client = clientlib.Client(dry_run=dry_run, verbose=getattr(args, "verbose", False))
+        client = clientlib.Client(dry_run=dry_run,
+                                  verbose=getattr(args, "verbose", False),
+                                  profile=getattr(args, "profile", None))
     except MissingCredentials as e:
         raise SystemExit(str(e))
     app_id = app.get("appId") or clientlib.resolve_app_id(client, app["bundleId"])
@@ -148,7 +150,7 @@ def cmd_init(args) -> int:
     if args.no_pull:
         print("\nNext: 'ascsync pull' to fill data/ from App Store Connect.")
         return 0
-    if missing_env():
+    if missing_env(getattr(args, "profile", None)):
         print("\nNo credentials in the environment, so nothing was fetched.")
         print("Set ASC_ISSUER_ID, ASC_KEY_ID and ASC_PRIVATE_KEY_PATH "
               "(see the README), then run 'ascsync pull'.")
@@ -477,6 +479,9 @@ def cmd_releases(args) -> int:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="ascsync", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--profile", metavar="NAME",
+                        help="credentials from a named profile "
+                             "(~/.config/ascsync/credentials.json)")
     parser.add_argument("--verbose", action="store_true", help="show every HTTP call")
     sub = parser.add_subparsers(dest="command", required=True)
 

@@ -28,10 +28,6 @@ which is enough in practice, but you have to know it.
 
 ## Usable by more people
 
-- [ ] **Several keys or teams.** Two apps in one account share a key, and that
-      works today. Two *accounts* mean swapping three environment variables by
-      hand — fine for one person, thin for an agency. Named profiles in a
-      config file would fix it.
 
 ## Dependable
 

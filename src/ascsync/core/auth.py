@@ -8,6 +8,7 @@ Credentials come from the environment:
 """
 from __future__ import annotations
 
+import json
 import os
 import time
 from typing import Optional
@@ -22,27 +23,84 @@ RENEW_BEFORE = 120         # renew 2 minutes early, for safety
 
 ENV_VARS = ("ASC_ISSUER_ID", "ASC_KEY_ID", "ASC_PRIVATE_KEY_PATH")
 
+# Named profiles, for people who work across several App Store Connect
+# accounts. One file outside the repository, one block per account:
+#
+#     ~/.config/ascsync/credentials.json
+#     {
+#       "default": {"issuerId": "…", "keyId": "…",
+#                   "privateKeyPath": "~/.appstoreconnect/private_keys/AuthKey_X.p8"},
+#       "client-b": {"issuerId": "…", "keyId": "…", "privateKeyPath": "…"}
+#     }
+#
+#     ascsync --profile client-b plan
+#     ASCSYNC_PROFILE=client-b ascsync plan
+#
+# The environment always wins: a shell that has the three variables set keeps
+# behaving exactly as before, profiles or not.
+PROFILES_PATH = os.path.join(
+    os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config"),
+    "ascsync", "credentials.json")
+ENV_PROFILE = "ASCSYNC_PROFILE"
+
+
+def load_profile(name: Optional[str] = None) -> dict:
+    """The named profile's three values, or {} when there is nothing to load."""
+    name = name or os.environ.get(ENV_PROFILE)
+    if not os.path.exists(PROFILES_PATH):
+        if name:
+            raise MissingCredentials(
+                f"No profile file at {PROFILES_PATH}, so '{name}' cannot be "
+                f"resolved.")
+        return {}
+    try:
+        with open(PROFILES_PATH, encoding="utf-8") as f:
+            profiles = json.load(f)
+    except ValueError as e:
+        raise MissingCredentials(f"{PROFILES_PATH} is not valid JSON: {e}")
+    chosen = name or "default"
+    if chosen not in profiles:
+        if name:
+            raise MissingCredentials(
+                f"No profile '{name}' in {PROFILES_PATH}. "
+                f"Known: {', '.join(sorted(profiles)) or 'none'}")
+        return {}
+    entry = profiles[chosen] or {}
+    return {"ASC_ISSUER_ID": entry.get("issuerId", ""),
+            "ASC_KEY_ID": entry.get("keyId", ""),
+            "ASC_PRIVATE_KEY_PATH": entry.get("privateKeyPath", "")}
+
+
+def resolve(profile: Optional[str] = None) -> dict:
+    """Environment first, profile second — never the other way round."""
+    from_profile = load_profile(profile)
+    return {name: os.environ.get(name) or from_profile.get(name, "")
+            for name in ENV_VARS}
+
 
 class MissingCredentials(RuntimeError):
     pass
 
 
-def missing_env() -> list:
-    return [v for v in ENV_VARS if not os.environ.get(v)]
+def missing_env(profile: Optional[str] = None) -> list:
+    values = resolve(profile)
+    return [v for v in ENV_VARS if not values.get(v)]
 
 
 class TokenProvider:
     """Hands out a valid bearer token and renews it on its own."""
 
-    def __init__(self) -> None:
-        missing = missing_env()
+    def __init__(self, profile: Optional[str] = None) -> None:
+        values = resolve(profile)
+        missing = [v for v in ENV_VARS if not values.get(v)]
         if missing:
             raise MissingCredentials(
-                "Missing environment variables: " + ", ".join(missing) +
-                "\n  export ASC_ISSUER_ID=… ASC_KEY_ID=… ASC_PRIVATE_KEY_PATH=…")
-        self.issuer = os.environ["ASC_ISSUER_ID"]
-        self.key_id = os.environ["ASC_KEY_ID"]
-        self.key_path = os.path.expanduser(os.environ["ASC_PRIVATE_KEY_PATH"])
+                "Missing credentials: " + ", ".join(missing) +
+                "\n  export ASC_ISSUER_ID=… ASC_KEY_ID=… ASC_PRIVATE_KEY_PATH=…"
+                f"\n  or put a profile in {PROFILES_PATH} and pass --profile")
+        self.issuer = values["ASC_ISSUER_ID"]
+        self.key_id = values["ASC_KEY_ID"]
+        self.key_path = os.path.expanduser(values["ASC_PRIVATE_KEY_PATH"])
         if not os.path.exists(self.key_path):
             raise MissingCredentials(f"Private key not found: {self.key_path}")
         self._token: Optional[str] = None

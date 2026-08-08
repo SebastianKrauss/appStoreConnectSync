@@ -92,6 +92,26 @@ export ASC_PRIVATE_KEY_PATH="~/.appstoreconnect/private_keys/AuthKey_XXXXXXXXXX.
 Note that the key ID is also in the filename, which is the convention Apple's
 own tools rely on — keep the name as downloaded.
 
+**Several accounts?** Put them in `~/.config/ascsync/credentials.json`, one
+block per account, and pick one with `--profile`:
+
+```json
+{
+  "default":  {"issuerId": "…", "keyId": "…", "privateKeyPath": "~/.appstoreconnect/private_keys/AuthKey_AAA.p8"},
+  "client-b": {"issuerId": "…", "keyId": "…", "privateKeyPath": "~/.appstoreconnect/private_keys/AuthKey_BBB.p8"}
+}
+```
+
+```bash
+ascsync --profile client-b plan
+ASCSYNC_PROFILE=client-b ascsync plan
+```
+
+The environment always wins. A shell with the three variables exported behaves
+exactly as it did before, profile file or not — so nothing you have already set
+up can be quietly overridden by a file you forgot about. Two apps in the *same*
+account need no profiles at all; they share one key.
+
 **In CI**, pass the key as a secret rather than a file: base64-encode it
 (`base64 -i AuthKey_XXXXXXXXXX.p8`), store that as a secret, and write it back
 to a temporary file at the start of the job. Give CI its own key with its own

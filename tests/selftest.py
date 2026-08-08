@@ -12,6 +12,7 @@ the tool, not the contents of your project.
 from __future__ import annotations
 
 import importlib
+import json
 import os
 import shutil
 import sys
@@ -621,6 +622,49 @@ def test_schema_check_against_a_fixture():
           "a resource the spec does not describe yields nothing, quietly")
 
 
+def test_credential_profiles():
+    """Named accounts, without ever letting a file outrank the environment."""
+    section("Credential profiles")
+    from ascsync.core import auth
+
+    directory = tempfile.mkdtemp()
+    key = os.path.join(directory, "AuthKey_TEST123456.p8")
+    open(key, "w").write("not a real key")
+    profiles = os.path.join(directory, "credentials.json")
+    json.dump({"default": {"issuerId": "iss-default", "keyId": "kid-default",
+                           "privateKeyPath": key},
+               "client-b": {"issuerId": "iss-b", "keyId": "kid-b",
+                            "privateKeyPath": key}},
+              open(profiles, "w"))
+
+    previous_path = auth.PROFILES_PATH
+    saved = {name: os.environ.pop(name, None) for name in auth.ENV_VARS}
+    auth.PROFILES_PATH = profiles
+    try:
+        check(auth.resolve()["ASC_ISSUER_ID"] == "iss-default",
+              "with no name, 'default' is used")
+        check(auth.resolve("client-b")["ASC_KEY_ID"] == "kid-b",
+              "a named profile is picked up")
+        check(auth.missing_env("client-b") == [], "and counts as complete")
+
+        os.environ["ASC_ISSUER_ID"] = "from-environment"
+        check(auth.resolve("client-b")["ASC_ISSUER_ID"] == "from-environment",
+              "the environment wins over the profile, never the other way round")
+        os.environ.pop("ASC_ISSUER_ID")
+
+        try:
+            auth.resolve("nope")
+            check(False, "an unknown profile is refused")
+        except auth.MissingCredentials as e:
+            check("client-b" in str(e), "and the error lists the ones that exist")
+    finally:
+        auth.PROFILES_PATH = previous_path
+        for name, value in saved.items():
+            if value is not None:
+                os.environ[name] = value
+        shutil.rmtree(directory, ignore_errors=True)
+
+
 def main() -> int:
     for test in (test_three_way_diff, test_play_mode, test_duration_and_rrule,
                  test_event_texts_within_limits, test_territory_exclusion,
@@ -631,7 +675,7 @@ def main() -> int:
                  test_achievement_scheme_expansion, test_html_report,
                  test_dry_run_receipt_and_write_log, test_error_guidance,
                  test_two_projects_side_by_side, test_event_calendar,
-                 test_schema_check_against_a_fixture):
+                 test_schema_check_against_a_fixture, test_credential_profiles):
         test()
     print("")
     if FAILURES:
