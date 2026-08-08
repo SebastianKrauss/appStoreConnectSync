@@ -104,7 +104,21 @@ leaves, or on whatever schedule your own policy demands.
 
 ### Point it at your app
 
-Describe your app in `data/app.json` — `bundleId` at minimum — and check:
+```bash
+cd ~/projects/myapp-store        # an empty directory, ideally its own repo
+ascsync init --bundle-id com.example.myapp --locales en-US,de-DE
+```
+
+`init` writes `data/app.json` and `data/locales.json`, creates `assets/`, and —
+if credentials are in the environment — pulls everything App Store Connect
+already knows about the app on top. A full pull is right at this moment and at
+no other: `data/` is empty, so there is no local text an empty ASC field could
+overwrite.
+
+Without credentials it scaffolds and says so; `--no-pull` skips the fetch
+deliberately.
+
+Then check the connection:
 
 ```bash
 .venv/bin/ascsync doctor
@@ -137,6 +151,7 @@ does the typing for you.
 
 | Command | Effect |
 |---|---|
+| `ascsync init --bundle-id …` | create a project here and fill it from ASC |
 | `ascsync doctor` | access, role, rate limit, app and version state |
 | `ascsync pull [--domain …]` | ASC state into `data/` (merged) **and** `.snapshot/` |
 | `ascsync pull --snapshot-only` | `.snapshot/` only; `data/` untouched |

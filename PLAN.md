@@ -33,9 +33,11 @@ Without these it is a shared folder, not a product.
 - [ ] **Error messages that help.** Today the API's answer is often all you
       get. The dozen most common cases deserve a sentence about what to do —
       the same standard the code comments already meet.
-- [ ] **`ascsync init`.** One command that builds `data/` from an app that
-      already exists in ASC: a `pull` that knows nothing is there yet. Today
-      you have to understand the scaffold by hand.
+- [x] **`ascsync init`.** Writes the two files that matter, creates `assets/`,
+      and pulls the existing ASC state on top — a full pull, which is safe
+      exactly here and nowhere else, because `data/` is still empty. Refuses to
+      overwrite an existing project without `--force`, and degrades to a plain
+      scaffold when there are no credentials.
 - [x] **`generators/achievement_template.py` is generic.** The families moved
       out of Python and into `data/gamecenter/achievement_scheme.json`: a
       suffix template, the value lists to expand, and a points lookup. The

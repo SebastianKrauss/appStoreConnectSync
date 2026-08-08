@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """ascsync — one command for App Store Connect.
 
+  ascsync init --bundle-id com.example.app   create a project here and fill it
   ascsync doctor                       auth, role, rate limit, app/version state
   ascsync pull   [--domain …] [--all]  ASC state into data/ + .snapshot/
                  [--snapshot-only]     .snapshot/ only, data/ left untouched
@@ -93,6 +94,71 @@ def cmd_doctor(args) -> int:
     print(f"  Snapshot: {'present' if os.path.isdir(paths.SNAPSHOT_DIR) else 'missing'}"
           f" ({paths.rel_to_asc(paths.SNAPSHOT_DIR)})")
     return 0
+
+
+def cmd_init(args) -> int:
+    """Create a project here, and fill it from an app that already exists.
+
+    The scaffold is the easy half. The hard half is that a new user has no idea
+    which of the twelve files matter, so this writes only what is needed to get
+    going, then pulls the real state on top and says what to do next.
+    """
+    root = paths.PROJECT_ROOT
+    app_path = paths.APP_PATH
+    if os.path.exists(app_path) and not args.force:
+        print(f"{paths.rel_to_asc(app_path)} already exists — "
+              f"nothing done. Use --force to overwrite it.")
+        return 1
+    if not args.bundle_id:
+        print("Which app? Pass --bundle-id com.example.yourapp")
+        return 1
+
+    locales = [l.strip() for l in (args.locales or "en-US").split(",") if l.strip()]
+    paths.write_json(app_path, {
+        "_comment": ["bundleId is required; everything else is optional.",
+                     "idPrefix is stripped from asset filenames.",
+                     "Add a 'code' block to cross-check ids against your source "
+                     "— see the docstring in core/validate.py."],
+        "bundleId": args.bundle_id,
+        "idPrefix": args.bundle_id + ".",
+        "platform": "IOS",
+        "primaryLocale": locales[0],
+        "categories": {"primaryCategory": "", "primarySubcategoryOne": "",
+                       "primarySubcategoryTwo": "", "secondaryCategory": ""},
+    })
+    paths.write_json(paths.LOCALES_PATH, {
+        "_comment": ["One language list for ALL domains. Adding one here "
+                     "demands it everywhere: store texts, achievements, "
+                     "leaderboards, purchases, events."],
+        "locales": locales,
+    })
+    for directory in ("assets/screenshots", "assets/previews",
+                      "assets/gamecenter/achievements", "assets/gamecenter/leaderboards",
+                      "assets/iap/review", "assets/subscriptions/review",
+                      "assets/events", ".snapshot"):
+        os.makedirs(os.path.join(root, directory), exist_ok=True)
+    print(f"Wrote {paths.rel_to_asc(app_path)} and "
+          f"{paths.rel_to_asc(paths.LOCALES_PATH)}, and created assets/.")
+
+    if args.no_pull:
+        print("\nNext: 'ascsync pull' to fill data/ from App Store Connect.")
+        return 0
+    if missing_env():
+        print("\nNo credentials in the environment, so nothing was fetched.")
+        print("Set ASC_ISSUER_ID, ASC_KEY_ID and ASC_PRIVATE_KEY_PATH "
+              "(see the README), then run 'ascsync pull'.")
+        return 0
+
+    # A full pull is right here and nowhere else: data/ is empty, so there is
+    # no local text an empty ASC field could overwrite.
+    print("\nFetching the current state from App Store Connect …")
+    args.domain, args.snapshot_only, args.only = [], False, []
+    args.only_locale, args.skip_assets, args.all = [], False, True
+    code = cmd_pull(args)
+    if code == 0:
+        print("\nNow: read through data/, then 'ascsync validate --readiness' "
+              "to see what submission still needs.")
+    return code
 
 
 def cmd_pull(args) -> int:
@@ -351,6 +417,16 @@ def main(argv=None) -> int:
         if with_assets:
             p.add_argument("--skip-assets", action="store_true",
                            help="skip images and videos")
+
+    p_init = sub.add_parser("init", help="create a project here and fill it")
+    p_init.add_argument("--bundle-id", help="the app's bundle id")
+    p_init.add_argument("--locales", default="en-US",
+                        help="comma separated, first one is primary (default: en-US)")
+    p_init.add_argument("--no-pull", action="store_true",
+                        help="scaffold only, do not contact ASC")
+    p_init.add_argument("--force", action="store_true",
+                        help="overwrite an existing data/app.json")
+    p_init.set_defaults(func=cmd_init)
 
     p_doctor = sub.add_parser("doctor", help="check access and states")
     p_doctor.set_defaults(func=cmd_doctor)
