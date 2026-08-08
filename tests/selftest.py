@@ -12,6 +12,7 @@ the tool, not the contents of your project.
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 import tempfile
 from datetime import datetime, timedelta, timezone
@@ -453,6 +454,51 @@ def test_html_report():
     check("&#x27;" in out or "<td" in out, "values are escaped into the table")
 
 
+def test_dry_run_receipt_and_write_log():
+    """Turning 'look before you write' from a habit into a mechanism."""
+    section("Dry-run receipt and write log")
+    import time as _time
+    from ascsync.core import planner as pl, report as rep_mod
+
+    directory = tempfile.mkdtemp()
+    previous = paths.PROJECT_ROOT
+    paths.PROJECT_ROOT = directory
+    try:
+        def make(kind, path, executed=False):
+            rep = rep_mod.Report("push", dry_run=not executed)
+            plan = rep.plan_for("store")
+            plan.add(kind, path, executed=executed)
+            return rep
+
+        rehearsal = make(pl.UPDATE, "1.0/description")
+        check(not rehearsal.matching_receipt(), "no receipt yet, so no match")
+        rehearsal.save_receipt()
+        check(make(pl.UPDATE, "1.0/description").matching_receipt(),
+              "the same plan matches its own receipt")
+        check(not make(pl.UPDATE, "1.0/keywords").matching_receipt(),
+              "a different plan does not — which is the whole point")
+        check(not make(pl.CREATE, "1.0/description").matching_receipt(),
+              "same path, different action: also no match")
+
+        # Reads are not part of the fingerprint; only writes are.
+        noop = rep_mod.Report("push", dry_run=True)
+        noop.plan_for("store").add(pl.NOOP, "1.0/whatever")
+        empty = rep_mod.Report("push", dry_run=True)
+        check(noop.fingerprint() == empty.fingerprint(),
+              "unchanged records do not alter the fingerprint")
+
+        real = make(pl.UPDATE, "1.0/description", executed=True)
+        log = real.append_write_log()
+        check(log and os.path.exists(log), "a write leaves a line in .writes.log")
+        line = open(log, encoding="utf-8").read().strip()
+        check("push\tupdate\t1.0/description" in line, f"readable and greppable -> {line[-40:]}")
+        check(make(pl.UPDATE, "1.0/description").append_write_log() is None,
+              "a dry run writes no log line")
+    finally:
+        paths.PROJECT_ROOT = previous
+        shutil.rmtree(directory, ignore_errors=True)
+
+
 def main() -> int:
     for test in (test_three_way_diff, test_play_mode, test_duration_and_rrule,
                  test_event_texts_within_limits, test_territory_exclusion,
@@ -460,7 +506,8 @@ def main() -> int:
                  test_image_rules, test_data_files_load, test_readiness,
                  test_pull_merge_overwrites_local_texts,
                  test_code_drift_detects_patterns, test_products_match_code,
-                 test_achievement_scheme_expansion, test_html_report):
+                 test_achievement_scheme_expansion, test_html_report,
+                 test_dry_run_receipt_and_write_log):
         test()
     print("")
     if FAILURES:

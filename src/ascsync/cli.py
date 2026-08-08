@@ -24,6 +24,7 @@ by someone else.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 
@@ -193,17 +194,23 @@ def cmd_pull(args) -> int:
     return 1 if rep.failed else 0
 
 
-def _run_apply(args, dry_run: bool, command: str) -> int:
-    rep = report.Report(command, dry_run=dry_run)
+def _walk(args, rep, dry_run: bool, quiet: bool = False):
+    """Walk every selected domain once, filling `rep`. Writes only when asked.
+
+    Shared by plan, push and the rehearsal that --require-dry-run performs, so
+    a dry run can never take a different route than the real thing.
+    """
+    out = sys.stderr if getattr(args, "json", False) else sys.stdout
     ctx = build_context(dry_run=dry_run, args=args)
     lock = assetlib.AssetLock()
     engine = make_engine(ctx, args, lock)
     for domain in select(args.domain):
         plan = rep.plan_for(domain.name)
-        print(f"\n== {domain.title or domain.name} ==")
+        if not quiet:
+            print(f"\n== {domain.title or domain.name} ==", file=out)
         if domain.push_flag and not ctx.flags.get(domain.push_flag):
             plan.add(planner.BLOCKED, domain.name,
-                     f"braucht --{domain.push_flag.replace('_', '-')}")
+                     f"needs --{domain.push_flag.replace('_', '-')}")
             continue
         try:
             if domain.apply_fn:
@@ -212,15 +219,33 @@ def _run_apply(args, dry_run: bool, command: str) -> int:
                 domains.generic_apply(engine, ctx, domain, plan)
         except clientlib.ApiError as e:
             rep.fail(f"{domain.name}: {e}")
+        if quiet:
+            continue
         for action in plan.actions:
             if action.kind != planner.NOOP:
-                print(f"  {action.line()}")
+                print(f"  {action.line()}", file=out)
     lock.save()
-    rep.summary()
-    rep.write_json()
+
+
+def _run_apply(args, dry_run: bool, command: str) -> int:
+    # With --json the running commentary moves to stderr; stdout carries the
+    # report and nothing else.
+    out = sys.stderr if getattr(args, "json", False) else sys.stdout
+    rep = report.Report(command, dry_run=dry_run)
+    _walk(args, rep, dry_run=dry_run)
+    if dry_run:
+        rep.save_receipt()
+    if not getattr(args, "json", False):
+        rep.summary()
+    path = rep.write_json()
+    written = rep.append_write_log()
+    if written and not getattr(args, "json", False):
+        print(f"Wrote {paths.rel_to_asc(written)}", file=out)
     if getattr(args, "html", None):
-        path = htmlreport.write(rep, args.html, title=f"ascsync {command}")
-        print(f"Report: {paths.rel_to_asc(path)}")
+        html_path = htmlreport.write(rep, args.html, title=f"ascsync {command}")
+        print(f"Report: {paths.rel_to_asc(html_path)}", file=out)
+    if getattr(args, "json", False):
+        print(open(path, encoding="utf-8").read().rstrip())
     return rep.exit_code()
 
 
@@ -231,28 +256,47 @@ def cmd_plan(args) -> int:
 def cmd_push(args) -> int:
     if not args.yes:
         print("Dry run (no --yes) — nothing will be written.\n")
-    return _run_apply(args, dry_run=not args.yes, command="push")
+        return _run_apply(args, dry_run=True, command="push")
+
+    if getattr(args, "require_dry_run", False):
+        # Walk once without writing to learn what this push would do, then
+        # insist that a dry run has already seen exactly that. Costs one extra
+        # read pass and turns "look before you write" from a habit into a rule.
+        rehearsal = report.Report("push", dry_run=True)
+        _walk(args, rehearsal, dry_run=True, quiet=True)
+        if not rehearsal.matching_receipt():
+            print("Refusing to write: no dry run on record for this exact plan.\n"
+                  "Run 'ascsync push' (without --yes) first and read what it "
+                  "says.\nIf the plan changed since your last dry run, that is "
+                  "the point — read it again.", file=sys.stderr)
+            return 1
+    return _run_apply(args, dry_run=False, command="push")
 
 
 def cmd_validate(args) -> int:
     locales = paths.load_locales()
     problems = []
-    print("Offline validation (no API access)"
+    # With --json the prose goes to stderr so stdout stays one clean document.
+    # Dropping it altogether would leave the person watching a failing run with
+    # nothing to read.
+    say = ((lambda *a: print(*a, file=sys.stderr)) if getattr(args, "json", False)
+           else print)
+    say("Offline validation (no API access)"
           + (" — including submission readiness" if args.readiness else ""))
     for domain in select(args.domain):
         found = validate.validate_domain(domain, locales,
                                          check_assets=not args.skip_assets,
                                          readiness=args.readiness)
         if found:
-            print(f"\n== {domain.title or domain.name} ==")
+            say(f"\n== {domain.title or domain.name} ==")
             for p in found:
-                print(f"  - {p}")
+                say(f"  - {p}")
         problems.extend(found)
     language_problems = validate.validate_app_languages(locales)
     if language_problems:
-        print("\n== Languages ==")
+        say("\n== Languages ==")
         for p in language_problems:
-            print(f"  - {p}")
+            say(f"  - {p}")
         problems.extend(language_problems)
 
     ids = {}
@@ -265,9 +309,9 @@ def cmd_validate(args) -> int:
                        for i in domains.doc_items(doc, resource)] if doc else []
     drift = validate.validate_code_drift(ids)
     if drift:
-        print("\n== Cross-check against the app source ==")
+        say("\n== Cross-check against the app source ==")
         for p in drift:
-            print(f"  - {p}")
+            say(f"  - {p}")
         problems.extend(drift)
 
     event_doc = domains.load_doc(events_res.EVENTS_DOMAIN)
@@ -275,25 +319,33 @@ def cmd_validate(args) -> int:
         event_problems = validate.validate_events(
             domains.doc_items(event_doc, events_res.EVENTS))
         if event_problems:
-            print("\n== Event deadlines and quotas ==")
+            say("\n== Event deadlines and quotas ==")
             for p in event_problems:
-                print(f"  - {p}")
+                say(f"  - {p}")
             problems.extend(event_problems)
 
     if args.readiness:
         structural = validate.validate_readiness(locales)
         if structural:
-            print("\n== Submission readiness ==")
+            say("\n== Submission readiness ==")
             for p in structural:
-                print(f"  - {p}")
+                say(f"  - {p}")
             problems.extend(structural)
-        print("\n== Not checkable offline — tick these off yourself ==")
+        say("\n== Not checkable offline — tick these off yourself ==")
         for note in validate.NOT_CHECKABLE:
-            print(f"  . {note}")
+            say(f"  . {note}")
 
-    print(f"\n{len(problems)} finding(s)." if problems else "\nAll good.")
+    if getattr(args, "json", False):
+        # Printed last and on its own line, so a caller can take the tail of
+        # stdout without having to strip the prose above it.
+        print(json.dumps({"command": "validate",
+                          "readiness": bool(args.readiness),
+                          "findings": problems,
+                          "count": len(problems)}, ensure_ascii=False))
+        return 1 if problems else 0
+    say(f"\n{len(problems)} finding(s)." if problems else "\nAll good.")
     if not args.readiness:
-        print("Tip: 'ascsync validate --readiness' also checks what submission "
+        say("Tip: 'ascsync validate --readiness' also checks what submission "
               "needs (support URL, categories, review contact, ...).")
     return 1 if problems else 0
 
@@ -447,6 +499,8 @@ def main(argv=None) -> int:
     p_plan = sub.add_parser("plan", help="three-way diff, writes nothing")
     p_plan.add_argument("--html", metavar="FILE",
                         help="also write a readable report (images included)")
+    p_plan.add_argument("--json", action="store_true",
+                        help="the report as JSON on stdout, prose on stderr")
     add_domain_args(p_plan)
     p_plan.set_defaults(func=cmd_plan)
 
@@ -459,10 +513,16 @@ def main(argv=None) -> int:
                         help="include custom product pages")
     p_push.add_argument("--html", metavar="FILE",
                         help="also write a readable report (images included)")
+    p_push.add_argument("--json", action="store_true",
+                        help="the report as JSON on stdout, prose on stderr")
+    p_push.add_argument("--require-dry-run", action="store_true",
+                        help="refuse to write unless a dry run saw this exact plan")
     p_push.set_defaults(func=cmd_push)
 
     p_validate = sub.add_parser("validate", help="check offline")
     add_domain_args(p_validate)
+    p_validate.add_argument("--json", action="store_true",
+                            help="findings as JSON on stdout, prose on stderr")
     p_validate.add_argument("--readiness", action="store_true",
                             help="also check what SUBMISSION needs: fields the "
                                  "API leaves optional (support URL, copyright, "

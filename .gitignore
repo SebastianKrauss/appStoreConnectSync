@@ -2,6 +2,8 @@
 .venv/
 .requests.log
 .report.json
+.dryrun.json
+.writes.log
 __pycache__/
 .DS_Store
 

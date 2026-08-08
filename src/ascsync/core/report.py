@@ -93,6 +93,59 @@ class Report:
             f.write("\n")
         return path
 
+    def append_write_log(self) -> Optional[str]:
+        """One line per thing actually written, appended for ever.
+
+        `.requests.log` records HTTP traffic, which answers "what did the tool
+        send". This answers the question you have three weeks later: who
+        changed the German description, and when. Plain text, one line each, so
+        `grep` is enough.
+        """
+        if self.dry_run:
+            return None
+        written = [a for plan in self.plans for a in plan.actions
+                   if a.kind in planner.WRITING and a.executed]
+        if not written:
+            return None
+        path = os.path.join(paths.PROJECT_ROOT, ".writes.log")
+        stamp = time.strftime("%Y-%m-%dT%H:%M:%S")
+        with open(path, "a", encoding="utf-8") as f:
+            for action in written:
+                fields = f" [{', '.join(sorted(action.fields))}]" if action.fields else ""
+                f.write(f"{stamp}\t{self.command}\t{action.kind}\t"
+                        f"{action.path}{fields}\n")
+        return path
+
+    # -- the dry-run receipt -----------------------------------------------
+    #
+    # A dry run leaves a fingerprint of what it saw. `push --yes --require-dry-run`
+    # refuses unless that fingerprint matches what it is about to do — so
+    # "somebody looked at this first" becomes a mechanism rather than a habit.
+    # It is not a security boundary: --require-dry-run is opt-in, and anyone
+    # can leave it off. It is there to stop an agent, or a tired human, from
+    # skipping the one step that makes the rest safe.
+    def fingerprint(self) -> str:
+        import hashlib
+        material = "|".join(f"{a.kind}:{a.path}:{','.join(sorted(a.fields))}"
+                            for plan in self.plans for a in plan.actions
+                            if a.kind in planner.WRITING)
+        return hashlib.sha256(material.encode("utf-8")).hexdigest()[:16]
+
+    def save_receipt(self) -> None:
+        paths.write_json(os.path.join(paths.PROJECT_ROOT, ".dryrun.json"),
+                         {"command": self.command,
+                          "at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                          "fingerprint": self.fingerprint()})
+
+    def matching_receipt(self) -> bool:
+        path = os.path.join(paths.PROJECT_ROOT, ".dryrun.json")
+        if not os.path.exists(path):
+            return False
+        try:
+            return json.load(open(path, encoding="utf-8")).get("fingerprint") == self.fingerprint()
+        except (ValueError, OSError):
+            return False
+
     def exit_code(self) -> int:
         if self.failed or any(p.has_problems() for p in self.plans):
             return PROBLEM

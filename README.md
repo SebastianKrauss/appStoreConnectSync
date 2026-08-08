@@ -157,6 +157,7 @@ does the typing for you.
 | `ascsync pull --snapshot-only` | `.snapshot/` only; `data/` untouched |
 | `ascsync plan [--domain …] [--html FILE]` | three-way diff, writes nothing, exit 2 on drift |
 | `ascsync push [--domain …] --yes` | write; without `--yes` it is a dry run |
+| `ascsync push --yes --require-dry-run` | refuse to write unless a dry run saw this exact plan |
 | `ascsync validate [--domain …]` | offline: limits, assets, languages, source cross-check |
 | `ascsync validate --readiness` | additionally: what **submission** requires |
 | `ascsync achievements template` | achievement scaffold from a declared id scheme |
@@ -169,6 +170,20 @@ Domains for `--domain`: `store`, `gamecenter`, `iap`, `subscriptions`,
 `events`, `accessibility`, `pricing`, `privacy`, `pages`. Further filters:
 `--only <key>` (repeatable),
 `--only-locale de-DE`, `--version 1.0`, `--skip-assets`.
+
+`--json` puts the report on stdout and moves the prose to stderr, so a script
+or an agent never has to parse sentences. It works on `plan`, `push` and
+`validate`.
+
+`--require-dry-run` makes the habit a rule: `push --yes` then walks once
+without writing, and refuses unless a dry run has already seen that exact plan.
+Change anything in between and the receipt no longer matches — which is the
+point, because the plan you approved is not the plan that would run. It is
+opt-in, so it stops a tired human or an over-eager agent, not an attacker.
+
+Every write appends a line to `.writes.log`: timestamp, command, action, path.
+`.requests.log` answers "what did the tool send"; this answers the question you
+have three weeks later — who changed the German description, and when.
 
 `--html` writes the same plan as a page instead of a list: grouped by domain,
 conflicts and drift first, counts up top, and every screenshot it would upload
