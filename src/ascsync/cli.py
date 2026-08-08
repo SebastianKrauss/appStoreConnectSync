@@ -208,7 +208,14 @@ def _walk(args, rep, dry_run: bool, quiet: bool = False):
     ctx = build_context(dry_run=dry_run, args=args)
     lock = assetlib.AssetLock()
     engine = make_engine(ctx, args, lock)
+    already = (report.Report.completed_domains()
+               if getattr(args, "resume", False) and not dry_run else [])
     for domain in select(args.domain):
+        if domain.name in already:
+            if not quiet:
+                print(f"\n== {domain.title or domain.name} == (done earlier, "
+                      f"skipped)", file=out)
+            continue
         plan = rep.plan_for(domain.name)
         if not quiet:
             print(f"\n== {domain.title or domain.name} ==", file=out)
@@ -225,6 +232,8 @@ def _walk(args, rep, dry_run: bool, quiet: bool = False):
             rep.fail(f"{domain.name}: {e}")
         if quiet:
             continue
+        if not dry_run and not rep.failed:
+            rep.mark_done(domain.name)
         for action in plan.actions:
             if action.kind != planner.NOOP:
                 print(f"  {action.line()}", file=out)
@@ -239,6 +248,10 @@ def _run_apply(args, dry_run: bool, command: str) -> int:
     _walk(args, rep, dry_run=dry_run)
     if dry_run:
         rep.save_receipt()
+    elif not rep.failed:
+        # A clean run has nothing left to resume; leaving the file behind would
+        # make the next unrelated push skip everything.
+        report.Report.clear_progress()
     if not getattr(args, "json", False):
         rep.summary()
     path = rep.write_json()
@@ -539,6 +552,8 @@ def main(argv=None) -> int:
                         help="the report as JSON on stdout, prose on stderr")
     p_push.add_argument("--require-dry-run", action="store_true",
                         help="refuse to write unless a dry run saw this exact plan")
+    p_push.add_argument("--resume", action="store_true",
+                        help="skip domains an earlier aborted run completed")
     p_push.set_defaults(func=cmd_push)
 
     p_validate = sub.add_parser("validate", help="check offline")

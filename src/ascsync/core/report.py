@@ -93,6 +93,43 @@ class Report:
             f.write("\n")
         return path
 
+    # -- resuming ----------------------------------------------------------
+    #
+    # A push is not transactional. It is idempotent, so the honest answer to an
+    # abort has always been "run it again" — the second run finds most of the
+    # work already done and skips it. What that costs is time: on a first push
+    # the re-check walks a thousand records to discover that 990 are fine.
+    #
+    # So leave a breadcrumb. Every completed domain is recorded, and --resume
+    # skips those on the next run. Deliberately per DOMAIN and not per record:
+    # a half-finished domain must be walked again anyway, because only the diff
+    # knows what is left, and a finer breadcrumb would be a lie about what the
+    # tool actually knows.
+    def mark_done(self, domain: str) -> None:
+        path = os.path.join(paths.PROJECT_ROOT, ".progress.json")
+        done = self.completed_domains()
+        if domain not in done:
+            done.append(domain)
+        paths.write_json(path, {"command": self.command,
+                                "at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                                "done": done})
+
+    @staticmethod
+    def completed_domains() -> List[str]:
+        path = os.path.join(paths.PROJECT_ROOT, ".progress.json")
+        if not os.path.exists(path):
+            return []
+        try:
+            return list(json.load(open(path, encoding="utf-8")).get("done") or [])
+        except (ValueError, OSError):
+            return []
+
+    @staticmethod
+    def clear_progress() -> None:
+        path = os.path.join(paths.PROJECT_ROOT, ".progress.json")
+        if os.path.exists(path):
+            os.remove(path)
+
     def append_write_log(self) -> Optional[str]:
         """One line per thing actually written, appended for ever.
 

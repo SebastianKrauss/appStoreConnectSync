@@ -26,6 +26,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 CASSETTE = os.path.join(HERE, "cassettes", "pull.json")
+PUSH_CASSETTE = os.path.join(HERE, "cassettes", "push.json")
 
 FAILURES = []
 
@@ -67,6 +68,42 @@ def run_pull(directory: str) -> subprocess.CompletedProcess:
         [sys.executable, "-m", "ascsync", "pull", "--snapshot-only",
          "--domain", "accessibility", "--domain", "iap", "--domain", "gamecenter"],
         cwd=directory, env=env, capture_output=True, text=True)
+
+
+def check_push_requests() -> None:
+    """What the tool would SEND, not just what it can read.
+
+    The pull cassette proves parsing. This one proves request building, which
+    is the half that failed six times on the first real push. It was recorded
+    from a dry run: the reads were real, the writes were intercepted, so
+    nothing was ever written to produce it.
+    """
+    print("\n== Replay: the requests a push would send ==")
+    if not os.path.exists(PUSH_CASSETTE):
+        check(False, f"no cassette at {PUSH_CASSETTE}")
+        return
+    requests = json.load(open(PUSH_CASSETTE, encoding="utf-8")).get("requests") or []
+    by_method = {r["method"]: r for r in requests}
+
+    check(set(by_method) == {"PATCH", "POST"},
+          f"a change and a new record -> {sorted(by_method)}")
+
+    patch = by_method.get("PATCH", {})
+    body = (patch.get("body") or {}).get("data", {})
+    check(body.get("type") == "accessibilityDeclarations", "PATCH names the type")
+    check("id" in body, "and carries the record's id")
+    check(set(body.get("attributes", {})) == {"supportsVoiceover"},
+          f"only the changed field is sent -> {sorted(body.get('attributes', {}))}")
+
+    post = by_method.get("POST", {})
+    body = (post.get("body") or {}).get("data", {})
+    check("id" not in body, "POST carries no id — ASC assigns it")
+    check(body.get("attributes", {}).get("deviceFamily") == "APPLE_TV",
+          "the new record's key is among its attributes")
+    parent = ((body.get("relationships") or {}).get("app") or {}).get("data") or {}
+    check(parent.get("type") == "apps" and parent.get("id"),
+          "the parent relationship is present — its absence broke the first "
+          "real push, and this is the test that would have caught it")
 
 
 def main() -> int:
@@ -125,6 +162,8 @@ def main() -> int:
         print("\n== Nothing of the recording's origin leaks ==")
         blob = json.dumps([access, iap, achievements, boards], ensure_ascii=False)
         check("8shape" not in blob.lower(), "no trace of the app it was recorded from")
+
+        check_push_requests()
     finally:
         shutil.rmtree(directory, ignore_errors=True)
 

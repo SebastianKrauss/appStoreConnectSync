@@ -665,6 +665,32 @@ def test_credential_profiles():
         shutil.rmtree(directory, ignore_errors=True)
 
 
+def test_resume_progress():
+    """A breadcrumb per completed domain, and the discipline to remove it."""
+    section("Resume after an abort")
+    from ascsync.core import report as rep_mod
+
+    directory = tempfile.mkdtemp()
+    previous = paths.PROJECT_ROOT
+    paths.PROJECT_ROOT = directory
+    try:
+        rep = rep_mod.Report("push", dry_run=False)
+        check(rep.completed_domains() == [], "nothing recorded to begin with")
+        rep.mark_done("store")
+        rep.mark_done("gamecenter")
+        rep.mark_done("store")
+        check(rep.completed_domains() == ["store", "gamecenter"],
+              f"each domain once, in order -> {rep.completed_domains()}")
+        rep_mod.Report.clear_progress()
+        check(rep.completed_domains() == [],
+              "a clean run clears it — otherwise the next push skips everything")
+        rep_mod.Report.clear_progress()
+        check(True, "clearing twice is not an error")
+    finally:
+        paths.PROJECT_ROOT = previous
+        shutil.rmtree(directory, ignore_errors=True)
+
+
 def main() -> int:
     for test in (test_three_way_diff, test_play_mode, test_duration_and_rrule,
                  test_event_texts_within_limits, test_territory_exclusion,
@@ -675,7 +701,8 @@ def main() -> int:
                  test_achievement_scheme_expansion, test_html_report,
                  test_dry_run_receipt_and_write_log, test_error_guidance,
                  test_two_projects_side_by_side, test_event_calendar,
-                 test_schema_check_against_a_fixture, test_credential_profiles):
+                 test_schema_check_against_a_fixture, test_credential_profiles,
+                 test_resume_progress):
         test()
     print("")
     if FAILURES:

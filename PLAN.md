@@ -31,11 +31,6 @@ which is enough in practice, but you have to know it.
 
 ## Dependable
 
-- [ ] **A `push` cassette.** Reading is covered; writing is not. Recording one
-      needs an account somebody is willing to write to, which is the only
-      reason it does not exist yet.
-- [ ] **Resume after an abort.** The push is idempotent, so "run it again"
-      works. Across a thousand calls a progress file would be kinder.
 - [ ] **Exercise subscriptions against a live one.** The field names are now
       confirmed against Apple's specification, so the declaration is no longer
       a guess — but nothing has actually created a subscription group through

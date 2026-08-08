@@ -105,11 +105,24 @@ class Cassette:
         self.path = path
         self.mode = mode
         self.entries: List[dict] = []
+        self.requests: List[dict] = []
         self.unmatched: List[str] = []
         if mode != "record" and os.path.exists(path):
-            self.entries = json.loads(open(path, encoding="utf-8").read())["entries"]
+            loaded = json.loads(open(path, encoding="utf-8").read())
+            self.entries = loaded["entries"]
+            self.requests = loaded.get("requests") or []
 
     # -- recording ---------------------------------------------------------
+    def record_request(self, method: str, path: str, body: Optional[dict]) -> None:
+        """What the tool would SEND, captured during a dry run.
+
+        Recording responses proves the tool can read. This proves it builds a
+        well-formed request — which is the half that broke six times on the
+        first real push, and the half no read-only recording can reach.
+        """
+        self.requests.append({"method": method, "path": path,
+                              "body": scrub(body) if body is not None else None})
+
     def record(self, method: str, path: str, params: Optional[dict],
                status: int, body: str) -> None:
         try:
@@ -151,7 +164,10 @@ class Cassette:
 
     def save(self) -> str:
         os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
-        text = json.dumps({"entries": self.entries}, ensure_ascii=False, indent=2)
+        payload = {"entries": self.entries}
+        if self.requests:
+            payload["requests"] = self.requests
+        text = json.dumps(payload, ensure_ascii=False, indent=2)
         for real, alias in self.aliases().items():
             text = text.replace(real, alias)
         with open(self.path, "w", encoding="utf-8") as f:
@@ -198,5 +214,5 @@ def from_environment() -> Optional[Cassette]:
         return None
     tape = Cassette(path, os.environ.get(ENV_MODE) or "replay")
     if tape.mode == "record":
-        atexit.register(lambda: tape.entries and tape.save())
+        atexit.register(lambda: (tape.entries or tape.requests) and tape.save())
     return tape

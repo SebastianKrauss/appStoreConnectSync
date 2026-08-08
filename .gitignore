@@ -4,6 +4,7 @@
 .report.json
 .dryrun.json
 .writes.log
+.progress.json
 __pycache__/
 .DS_Store
 

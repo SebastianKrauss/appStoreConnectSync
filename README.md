@@ -197,6 +197,13 @@ Domains for `--domain`: `store`, `gamecenter`, `iap`, `subscriptions`,
 or an agent never has to parse sentences. It works on `plan`, `push` and
 `validate`.
 
+`--resume` picks up an aborted push: every domain that finished is recorded,
+and the next run with `--resume` skips those. Per domain rather than per
+record, deliberately — a half-finished domain has to be walked again anyway,
+because only the diff knows what is left, and a finer breadcrumb would claim
+knowledge the tool does not have. A run that finishes cleanly removes the file,
+so it can never make an unrelated push skip everything.
+
 `--require-dry-run` makes the habit a rule: `push --yes` then walks once
 without writing, and refuses unless a dry run has already seen that exact plan.
 Change anything in between and the receipt no longer matches — which is the

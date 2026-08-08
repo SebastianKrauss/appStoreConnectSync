@@ -249,6 +249,8 @@ class Client:
 
     # -- writing -----------------------------------------------------------
     def post(self, path: str, body: dict) -> Optional[dict]:
+        if self.cassette and self.cassette.mode == "record":
+            self.cassette.record_request("POST", path, body)
         if self.dry_run:
             print(f"      [dry-run] POST {path}")
             return None
@@ -258,6 +260,8 @@ class Client:
         return r.json()
 
     def patch(self, path: str, body: dict) -> Optional[dict]:
+        if self.cassette and self.cassette.mode == "record":
+            self.cassette.record_request("PATCH", path, body)
         if self.dry_run:
             print(f"      [dry-run] PATCH {path}")
             return None
