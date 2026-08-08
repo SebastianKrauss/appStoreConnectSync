@@ -38,16 +38,34 @@ field will overwrite the local text.
 **5. Report honestly.** If a push reports errors, quote them. If you skipped
 something, say so. "Done" means verified, not hoped for.
 
+**6. One account at a time.** If the user works across several App Store
+Connect accounts, `--profile` picks one. Never guess which account a request
+belongs to, and never fall back to the default when a named profile is missing
+— writing someone else's store is not an error you can take back.
+
 ## The usual sequence
 
 ```bash
-ascsync validate                 # offline, costs nothing, catches most of it
+ascsync validate --json          # offline, costs nothing, catches most of it
 ascsync pull --snapshot-only     # fetch ASC state, spare data/
-ascsync push --domain <d>        # dry run — show it to the user
-# ... wait for consent ...
-ascsync push --domain <d> --yes  # write
-ascsync push --domain <d>        # check: this must find nothing left to do
+ascsync push --domain <d> --json --html plan.html   # dry run
+# ... show it, wait for consent ...
+ascsync push --domain <d> --yes --require-dry-run   # write
+ascsync push --domain <d> --json # check: this must find nothing left to do
 ```
+
+Use `--json` throughout. `plan`, `push` and `validate` all take it: the report
+goes to stdout, the prose to stderr, and you never have to parse a sentence.
+
+Use `--require-dry-run` on the write. It walks once without writing,
+fingerprints what it would change, and refuses unless a dry run has already
+recorded exactly that plan. If you changed a field between showing the plan and
+writing it, that refusal is correct — the plan the user approved is not the
+plan that would run. Show the new one and ask again.
+
+`--html plan.html` renders the same plan as a page with the images in it. When
+a user has to approve forty-eight screenshots, send them that instead of four
+hundred lines.
 
 That last step is the most important one and the most often skipped. A push
 that finds work again on the second run is not finished — it will repeat that
@@ -61,8 +79,16 @@ release.
 
 - editing JSON under `data/`, writing copy, keeping to the limits
 - `validate`, `plan`, `pull`, `doctor`, every dry run — all read-only
-- `events generate`, `achievements template` — these only write local files
+- `events generate`, `events calendar`, `achievements template`,
+  `schema check` — these write local files or nothing at all
 - inspecting images, measuring dimensions, stripping alpha channels
+
+Two of those are worth reaching for unprompted. `ascsync events calendar` shows
+when each event has to be submitted, published and run — the arithmetic people
+get wrong, and worth checking before anybody commits to a launch date.
+`ascsync schema check` compares the declarations against Apple's own OpenAPI
+specification; run it when a push fails with "is not an attribute", because it
+will tell you which declaration is wrong.
 
 ## What you must ask about
 
@@ -95,12 +121,20 @@ applies to your own inspection just as much as to the code.
 **Empty text fields delete nothing.** They mean "do not touch". Removing a text
 for real has to be done in ASC.
 
+**Every write leaves a line in `.writes.log`.** When the user asks what changed
+and when, read that file rather than reconstructing it from memory.
+
 ## When something goes wrong
 
 `push` is not transactional. If it breaks in the middle, part of the work is
-written. That is manageable because every run is idempotent: fix the cause, run
-the same command again, it continues. Do not invent a repair — read the error,
-it names the resource, the field and the reason.
+written. That is manageable because every run is idempotent: fix the cause and
+run the same command again. `--resume` skips the domains that already
+finished, which on a first push saves walking a thousand records to discover
+that most of them are fine.
+
+Do not invent a repair. Read the error — it names the resource, the field and
+the reason, and for the dozen most common failures it also says where to look.
+That sentence after the arrow is not decoration; it is usually the answer.
 
 On `409` or `400` with "is not an attribute" / "is not a relationship" the
 fault is in the declaration under `resources/`, not in the data. Check against

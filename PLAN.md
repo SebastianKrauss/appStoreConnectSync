@@ -41,9 +41,11 @@ which is enough in practice, but you have to know it.
 
 ## For running it through an agent
 
-- [ ] **Sharpen [`AGENTS.md`](AGENTS.md) against real behaviour.** The rules
-      are written. Whether they are sufficient only shows when an agent follows
-      them without their author sitting next to it.
+- [ ] **Watch an agent follow [`AGENTS.md`](AGENTS.md).** It now covers the
+      mechanisms as well as the rules — `--json`, `--require-dry-run`,
+      `--resume`, `--profile`, and which read-only commands to reach for
+      unprompted. Whether that is *sufficient* only shows when somebody else's
+      agent works from it without its author sitting next to them.
 
 ---
 
