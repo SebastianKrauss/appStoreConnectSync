@@ -36,11 +36,11 @@ Without these it is a shared folder, not a product.
 - [ ] **`ascsync init`.** One command that builds `data/` from an app that
       already exists in ASC: a `pull` that knows nothing is there yet. Today
       you have to understand the scaffold by hand.
-- [ ] **Replace or remove `generators/achievement_template.py`.** It still
-      encodes one specific game's achievement families. It is marked as an
-      example, but an example nobody else can run is closer to dead weight than
-      to documentation. Either generalise it (a small rule DSL) or move it to
-      an `examples/` directory.
+- [x] **`generators/achievement_template.py` is generic.** The families moved
+      out of Python and into `data/gamecenter/achievement_scheme.json`: a
+      suffix template, the value lists to expand, and a points lookup. The
+      shipped scheme is a runnable example with placeholder ids rather than
+      one game's private vocabulary.
 - [x] **A license.** Apache-2.0, with LICENSE and NOTICE in place. See below.
 - [ ] **Pin the supported Python versions.** It currently runs on 3.9 because
       that was the system version. 3.9 is at the end of its life — raise the

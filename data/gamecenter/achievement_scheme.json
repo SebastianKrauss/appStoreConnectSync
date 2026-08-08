@@ -1,0 +1,109 @@
+{
+  "_comment": [
+    "Achievement families. Each renders the cartesian product of its 'values'",
+    "into 'suffix'; every id gets idPrefix from app.json in front.",
+    "",
+    "points: a number, or a lookup { by: <placeholder>, map: {...}, default: n }",
+    "exclude: rendered suffixes to skip when one combination does not exist",
+    "referenceName: optional template; an existing one in achievements.json wins",
+    "",
+    "Game Center caps an app at 100 achievements and 1000 points in total.",
+    "This file is an EXAMPLE — replace the families with your own, or delete it",
+    "and maintain achievements.json by hand.",
+    "",
+    "  ascsync achievements template          # add missing ids, keep the texts",
+    "  ascsync achievements template --force  # regenerate all (texts are lost)"
+  ],
+  "families": [
+    {
+      "suffix": "tutorial.completed",
+      "points": 1
+    },
+    {
+      "suffix": "gift.{n}",
+      "values": {
+        "n": [
+          1,
+          3,
+          7,
+          14,
+          30
+        ]
+      },
+      "points": {
+        "by": "n",
+        "map": {
+          "1": 1,
+          "3": 1,
+          "7": 5,
+          "14": 5,
+          "30": 10
+        },
+        "default": 5
+      }
+    },
+    {
+      "suffix": "{mode}.first.win",
+      "values": {
+        "mode": [
+          "solo",
+          "versus"
+        ]
+      },
+      "points": 1
+    },
+    {
+      "suffix": "{mode}.win.{n}",
+      "values": {
+        "mode": [
+          "solo",
+          "versus"
+        ],
+        "n": [
+          10,
+          100
+        ]
+      },
+      "points": {
+        "by": "n",
+        "map": {
+          "10": 5,
+          "100": 10
+        },
+        "default": 5
+      }
+    },
+    {
+      "suffix": "level.{difficulty}.{n}",
+      "values": {
+        "difficulty": [
+          "easy",
+          "hard"
+        ],
+        "n": [
+          1,
+          10,
+          100
+        ]
+      },
+      "exclude": [
+        "level.easy.100"
+      ],
+      "points": {
+        "by": "n",
+        "map": {
+          "1": 1,
+          "10": 5,
+          "100": 10
+        },
+        "default": 5
+      }
+    },
+    {
+      "suffix": "season.champion",
+      "points": 25,
+      "showBeforeEarned": true,
+      "repeatable": true
+    }
+  ]
+}

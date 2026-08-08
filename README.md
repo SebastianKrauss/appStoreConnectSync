@@ -144,7 +144,7 @@ does the typing for you.
 | `ascsync push [--domain …] --yes` | write; without `--yes` it is a dry run |
 | `ascsync validate [--domain …]` | offline: limits, assets, languages, source cross-check |
 | `ascsync validate --readiness` | additionally: what **submission** requires |
-| `ascsync achievements template` | achievement scaffold from the ids in your source |
+| `ascsync achievements template` | achievement scaffold from a declared id scheme |
 | `ascsync events generate --ahead 12w` | event drafts, one per leaderboard occurrence |
 | `ascsync releases --yes` | release achievements/leaderboards for publication |
 | `ascsync privacy publish --yes` | publish app privacy (deliberately its own step) |
@@ -174,7 +174,8 @@ details land in `.report.json`.
 │   ├── locales.json          one language list for ALL domains
 │   ├── app.json              bundleId, idPrefix, categories, source cross-check
 │   ├── store/                app_info.json, versions.json, custom_pages.json
-│   ├── gamecenter/           achievements.json, leaderboards.json, leaderboard_sets.json
+│   ├── gamecenter/           achievements.json, achievement_scheme.json,
+│   │                         leaderboards.json, leaderboard_sets.json
 │   ├── iap.json  subscriptions.json  accessibility.json
 │   ├── pricing.json  privacy.json
 │   └── events/               events.json (generated), templates.json (maintained)

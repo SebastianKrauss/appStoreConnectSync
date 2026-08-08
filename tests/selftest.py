@@ -383,13 +383,60 @@ def test_products_match_code():
     check(not missing, f"every product id appears in the source (missing: {missing})")
 
 
+def test_achievement_scheme_expansion():
+    """The scheme is a declaration, so its expansion is where mistakes hide."""
+    section("Achievement scheme")
+    from ascsync.generators import achievement_template as ach
+
+    scheme = {"families": [
+        {"suffix": "tutorial.done", "points": 1},
+        {"suffix": "gift.{n}", "values": {"n": [1, 7, 30]},
+         "points": {"by": "n", "map": {"1": 1, "30": 10}, "default": 5}},
+        {"suffix": "{mode}.win.{n}",
+         "values": {"mode": ["solo", "versus"], "n": [10, 100]},
+         "exclude": ["versus.win.100"]},
+        {"suffix": "champion", "points": 25,
+         "showBeforeEarned": True, "repeatable": True},
+    ]}
+    items = ach.build(["en-US"], scheme)
+    tails = [i["vendorIdentifier"].split("app.", 1)[-1] for i in items]
+
+    check(len(items) == 1 + 3 + 3 + 1, f"{len(items)} ids (exclude removed one)")
+    check("versus.win.100" not in tails, "exclude drops exactly that combination")
+    check(tails[:2] == ["tutorial.done", "gift.1"],
+          f"declaration order is kept -> {tails[:2]}")
+
+    points = {i["vendorIdentifier"].split("app.", 1)[-1]: i["points"] for i in items}
+    check(points.get("gift.1") == 1 and points.get("gift.30") == 10,
+          "points lookup hits the mapped values")
+    check(points.get("gift.7") == 5, "and falls back to the default")
+    champion = [i for i in items if i["vendorIdentifier"].endswith("champion")][0]
+    check(champion["showBeforeEarned"] and champion["repeatable"] and champion["points"] == 25,
+          "flags and fixed points survive")
+
+    # merge() must not lose copy that somebody already wrote
+    existing = [{"vendorIdentifier": items[0]["vendorIdentifier"],
+                 "referenceName": "Hand-picked name",
+                 "localizations": {"en-US": {"name": "Welcome"}}},
+                {"vendorIdentifier": "com.example.app.legacy.one"}]
+    merged = ach.merge([dict(i) for i in items], existing)
+    first = [m for m in merged if m["vendorIdentifier"] == items[0]["vendorIdentifier"]][0]
+    check(first["localizations"]["en-US"]["name"] == "Welcome",
+          "existing text survives a regeneration")
+    check(first["referenceName"] == "Hand-picked name",
+          "a renamed referenceName survives too")
+    check(any(m["vendorIdentifier"].endswith("legacy.one") for m in merged),
+          "ids the scheme does not know are kept, never dropped")
+
+
 def main() -> int:
     for test in (test_three_way_diff, test_play_mode, test_duration_and_rrule,
                  test_event_texts_within_limits, test_territory_exclusion,
                  test_asset_resolution,
                  test_image_rules, test_data_files_load, test_readiness,
                  test_pull_merge_overwrites_local_texts,
-                 test_code_drift_detects_patterns, test_products_match_code):
+                 test_code_drift_detects_patterns, test_products_match_code,
+                 test_achievement_scheme_expansion):
         test()
     print("")
     if FAILURES:
