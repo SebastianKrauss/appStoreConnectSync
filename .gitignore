@@ -1,0 +1,14 @@
+# lokale Laufzeit-Artefakte, nicht ins Repo
+.venv/
+.requests.log
+.report.json
+__pycache__/
+.DS_Store
+
+# Zugangsdaten gehoeren NIE ins Repo
+*.p8
+
+# Build-Artefakte
+*.egg-info/
+build/
+dist/

@@ -1,0 +1,11 @@
+{
+  "_comment": [
+    "Accessibility declarations — one record per device family.",
+    "Every flag is a promise to someone who needs that feature; nothing here",
+    "can verify it for you.",
+    "'state' is assigned by ASC (DRAFT until published) and never written."
+  ],
+  "resource": "accessibilityDeclarations",
+  "key": "deviceFamily",
+  "items": []
+}

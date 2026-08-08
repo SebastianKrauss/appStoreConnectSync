@@ -1,0 +1,25 @@
+{
+  "_comment": [
+    "Basic facts about the app. bundleId is required, the rest optional.",
+    "idPrefix is stripped from asset filenames:",
+    "assets/gamecenter/achievements/<id without prefix>.png.",
+    "The 'code' section enables cross-checking ids against your",
+    "source; leave it out if you do not need it."
+  ],
+  "bundleId": "com.example.app",
+  "idPrefix": "com.example.app.",
+  "gameCenterGroupId": "",
+  "platform": "IOS",
+  "primaryLocale": "en-US",
+  "categories": {
+    "primaryCategory": "",
+    "primarySubcategoryOne": "",
+    "primarySubcategoryTwo": "",
+    "secondaryCategory": ""
+  },
+  "code": {
+    "sourceDir": "",
+    "labelsDir": "Resources/labels",
+    "sourceSuffix": ".swift"
+  }
+}

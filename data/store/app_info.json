@@ -1,0 +1,12 @@
+{
+  "resource": "appInfoLocalizations",
+  "key": "locale",
+  "items": {
+    "en-US": {
+      "name": "",
+      "subtitle": "",
+      "privacyPolicyUrl": "",
+      "privacyChoicesUrl": ""
+    }
+  }
+}

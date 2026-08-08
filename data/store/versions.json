@@ -1,0 +1,30 @@
+{
+  "resource": "appStoreVersions",
+  "key": "versionString",
+  "items": [
+    {
+      "versionString": "1.0",
+      "platform": "IOS",
+      "copyright": "",
+      "releaseType": "MANUAL",
+      "localizations": {
+        "en-US": {
+          "description": "",
+          "keywords": "",
+          "promotionalText": "",
+          "whatsNew": "",
+          "marketingUrl": "",
+          "supportUrl": ""
+        }
+      },
+      "reviewDetail": {
+        "contactFirstName": "",
+        "contactLastName": "",
+        "contactPhone": "",
+        "contactEmail": "",
+        "demoAccountRequired": false,
+        "notes": ""
+      }
+    }
+  ]
+}

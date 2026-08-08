@@ -1,0 +1,53 @@
+{
+  "_comment": [
+    "Templates for the event generator ('ascsync events generate').",
+    "",
+    "leaderboards: metric name -> vendorIdentifier of the recurring leaderboard.",
+    "  Its recurrence produces the dates.",
+    "defaults: applied to every generated event. deepLink MUST be set and must",
+    "  resolve — a dead link is a common reason for rejection. Leave territories",
+    "  empty once pricing.json has been pulled; the generator then derives the",
+    "  countries from availability.",
+    "texts: per language. name/shortDescription/longDescription may be one string",
+    "  for all metrics or an object {metric: text}. overrides.<play mode> replaces",
+    "  individual fields. Placeholders: {metric}, {metricName}, {playMode},",
+    "  {playModeName}, {start}, {end}.",
+    "Limits: name 30, shortDescription 50, longDescription 120 characters."
+  ],
+  "leaderboards": {
+    "score": "com.example.app.challenge.score"
+  },
+  "defaults": {
+    "badge": "CHALLENGE",
+    "priority": "HIGH",
+    "purpose": "KEEP_ACTIVE_USERS_INFORMED",
+    "purchaseRequirement": "NO_COST_ASSOCIATED",
+    "primaryLocale": "en-US",
+    "publishLeadDays": 7,
+    "deepLink": "",
+    "territories": [],
+    "territoriesExclude": []
+  },
+  "texts": {
+    "en-US": {
+      "metricNames": {
+        "score": "Points"
+      },
+      "playModeNames": {
+        "normal": "",
+        "raw": "Pure skill",
+        "oneShot": "1 attempt"
+      },
+      "name": {
+        "score": "Challenge: Points"
+      },
+      "shortDescription": {
+        "score": "Score as many points as you can."
+      },
+      "longDescription": {
+        "score": "As many points as possible. The top 25 earn a reward."
+      },
+      "overrides": {}
+    }
+  }
+}

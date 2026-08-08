@@ -1,0 +1,12 @@
+{
+  "_comment": [
+    "Auto-renewable subscriptions: groups -> subscriptions -> localizations.",
+    "Every subscription needs a group; groupLevel decides upgrade vs downgrade.",
+    "Prices, introductory offers and promotional offers stay in ASC — see the",
+    "module docstring in resources/subscriptions.py for why.",
+    "Limits: group name 30, subscription name 30, description 45 characters."
+  ],
+  "resource": "subscriptionGroups",
+  "key": "referenceName",
+  "items": []
+}

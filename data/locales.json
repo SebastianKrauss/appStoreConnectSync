@@ -1,0 +1,11 @@
+{
+  "_comment": [
+    "The one language list for ALL domains. Adding a language here",
+    "demands it everywhere: store texts, achievements, leaderboards,",
+    "in-app purchases, events.",
+    "The first one is the app's primary language."
+  ],
+  "locales": [
+    "en-US"
+  ]
+}
