@@ -28,6 +28,12 @@ jobs:
         # Drives pull end to end against a cassette — no credentials, no
         # network. This is the only test that sees real response bodies.
         run: python tests/test_replay.py
+      - name: Declarations vs. Apple's OpenAPI spec
+        # Downloads ~7 MB from developer.apple.com. Apple's availability is not
+        # this project's business, so a network failure must not fail the build
+        # — but a genuine mismatch should be visible in the log.
+        run: ascsync schema check || true
+        continue-on-error: true
       - name: Validate the shipped scaffold
         # The template data must stay loadable and within Apple's limits;
         # if it does not, every new user starts from something broken.

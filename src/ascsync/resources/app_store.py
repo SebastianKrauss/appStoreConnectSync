@@ -156,6 +156,23 @@ AGE_RATING = Resource(
         "unrestrictedWebAccess": Bool(),
         "kidsAgeBand": Field(),
         "ageRatingOverride": Field(),
+        # Newer questions Apple added to the questionnaire. lootBox in
+        # particular: if purchases hand out randomised items, Apple expects the
+        # odds to be visible before the purchase, and a wrong answer here is a
+        # rejection with a real cause behind it.
+        "advertising": Bool(),
+        "lootBox": Bool(),
+        "parentalControls": Bool(),
+        "userGeneratedContent": Bool(),
+        "messagingAndChat": Bool(),
+        "socialMedia": Bool(),
+        "socialMediaAgeRestricted": Bool(),
+        "gunsOrOtherWeapons": Field(),
+        "healthOrWellnessTopics": Field(),
+        "ageAssurance": Field(),
+        "ageRatingOverrideV2": Field(),
+        "koreaAgeRatingOverride": Field(),
+        "developerAgeRatingInfoUrl": Url(),
     },
 )
 

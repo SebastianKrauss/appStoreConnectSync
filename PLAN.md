@@ -40,16 +40,13 @@ which is enough in practice, but you have to know it.
       reason it does not exist yet.
 - [ ] **Resume after an abort.** The push is idempotent, so "run it again"
       works. Across a thousand calls a progress file would be kinder.
-- [ ] **Verify subscriptions against a live one.** Until somebody runs this
-      against a real subscription group, treat `resources/subscriptions.py` as
-      a well-informed guess.
+- [ ] **Exercise subscriptions against a live one.** The field names are now
+      confirmed against Apple's specification, so the declaration is no longer
+      a guess — but nothing has actually created a subscription group through
+      it. The remaining risk is behavioural, not structural.
 
 ## Friction
 
-- [ ] **Generate the field declarations from Apple's OpenAPI spec.** They are
-      hand-maintained today, and four of the six bugs the first push exposed
-      were wrong field or relationship names — exactly what a generated schema
-      would have prevented.
 
 ## For running it through an agent
 

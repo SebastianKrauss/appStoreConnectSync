@@ -597,6 +597,30 @@ def test_event_calendar():
           f"overlapping runs are found -> {cal.overlaps(entries)}")
 
 
+def test_schema_check_against_a_fixture():
+    """The checker itself, against a hand-made spec — no download in CI."""
+    section("Schema check")
+    from ascsync.core import schema as schemalib
+
+    spec = {"info": {"version": "test"}, "components": {"schemas": {
+        "AccessibilityDeclarationCreateRequest": {"properties": {"data": {"properties": {
+            "attributes": {"properties": {"deviceFamily": {}, "supportsVoiceover": {}}},
+            "relationships": {"properties": {"app": {}}}}}}},
+        "AccessibilityDeclarationUpdateRequest": {"properties": {"data": {"properties": {
+            "attributes": {"properties": {"publish": {}}}}}}},
+    }}}
+    attributes, relationships, used = schemalib.known_fields(
+        spec, "accessibilityDeclarations")
+    check(attributes == {"deviceFamily", "supportsVoiceover", "publish"},
+          f"create and update are merged -> {sorted(attributes)}")
+    check(relationships == {"app"}, "relationships come through too")
+    check(len(used) == 2, "both request schemas were consulted")
+
+    attributes, _, used = schemalib.known_fields(spec, "inAppPurchases")
+    check(used == [] and attributes == set(),
+          "a resource the spec does not describe yields nothing, quietly")
+
+
 def main() -> int:
     for test in (test_three_way_diff, test_play_mode, test_duration_and_rrule,
                  test_event_texts_within_limits, test_territory_exclusion,
@@ -606,7 +630,8 @@ def main() -> int:
                  test_code_drift_detects_patterns, test_products_match_code,
                  test_achievement_scheme_expansion, test_html_report,
                  test_dry_run_receipt_and_write_log, test_error_guidance,
-                 test_two_projects_side_by_side, test_event_calendar):
+                 test_two_projects_side_by_side, test_event_calendar,
+                 test_schema_check_against_a_fixture):
         test()
     print("")
     if FAILURES:

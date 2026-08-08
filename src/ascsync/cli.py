@@ -11,6 +11,7 @@
   ascsync validate [--domain …]        offline: limits, assets, languages, code drift
   ascsync events generate [--ahead 12w]  occurrence drafts + asset to-dos
   ascsync events calendar [--weeks 26]   submission, publication and run dates
+  ascsync schema check                 declarations vs. Apple's OpenAPI spec
   ascsync privacy publish [--yes]      publish app privacy (its own step)
   ascsync submit --version 1.0 | --event <ref> [--yes]
   ascsync releases [--yes]             release achievements/leaderboards
@@ -32,7 +33,7 @@ import sys
 from ascsync.core import assets as assetlib          # noqa: E402
 from ascsync.core import client as clientlib         # noqa: E402
 from ascsync.core import (domains, htmlreport, paths, planner, report,  # noqa: E402
-                          validate)
+                          schema as schemalib, validate)
 from ascsync.core.auth import MissingCredentials, missing_env       # noqa: E402
 from ascsync.core.engine import Engine               # noqa: E402
 from ascsync.generators import leaderboard_events    # noqa: E402
@@ -351,6 +352,14 @@ def cmd_validate(args) -> int:
     return 1 if problems else 0
 
 
+def cmd_schema_check(args) -> int:
+    spec = schemalib.load_spec(path=args.spec, refresh=args.refresh)
+    code, lines = schemalib.report(spec)
+    for line in lines:
+        print(line)
+    return code
+
+
 def cmd_events_calendar(args) -> int:
     from ascsync.generators import event_calendar
     for line in event_calendar.render(weeks=args.weeks):
@@ -537,6 +546,15 @@ def main(argv=None) -> int:
                                  "review contact), categories, screenshots per "
                                  "display type, app privacy, snapshot, event dates")
     p_validate.set_defaults(func=cmd_validate)
+
+    p_schema = sub.add_parser("schema", help="check declarations against Apple's spec")
+    schema_sub = p_schema.add_subparsers(dest="schema_command", required=True)
+    p_schema_check = schema_sub.add_parser(
+        "check", help="compare resources/ against the OpenAPI specification")
+    p_schema_check.add_argument("--spec", help="a local copy instead of downloading")
+    p_schema_check.add_argument("--refresh", action="store_true",
+                                help="ignore the cached download")
+    p_schema_check.set_defaults(func=cmd_schema_check)
 
     p_events = sub.add_parser("events", help="event tools")
     events_sub = p_events.add_subparsers(dest="events_command", required=True)

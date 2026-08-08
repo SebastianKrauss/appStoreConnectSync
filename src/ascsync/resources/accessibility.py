@@ -43,6 +43,10 @@ DECLARATIONS = Resource(
     writable={
         "deviceFamily": Enum(*DEVICE_FAMILIES, immutable=True),
         **{name: Bool() for name in FEATURES},
+        # Update-only in Apple's spec: setting it moves the declaration out of
+        # DRAFT. Left out of data/ by default, because publishing should be a
+        # decision rather than a side effect of editing a checkbox.
+        "publish": Bool(),
     },
     # ASC owns the lifecycle: a declaration starts as DRAFT and is published
     # with the next version. Sending it back would be rejected.

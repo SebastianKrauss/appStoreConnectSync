@@ -103,6 +103,9 @@ LEADERBOARDS = Resource(
             "ELAPSED_TIME_SECOND", "ELAPSED_TIME_MINUTE", "MONEY_POUND",
             "MONEY_DOLLAR", "MONEY_EURO", "MONEY_FRANC", "MONEY_KRONER",
             "MONEY_YEN", "MONEY_RUPEE", "MONEY_WON"),
+        # Whether the board appears in Game Center at all. Apple defaults it
+        # to visible; declaring it lets the repository say so out loud.
+        "visibility": Enum("SHOW_FOR_ALL", "HIDE_FOR_ALL"),
         "submissionType": Enum("BEST_SCORE", "MOST_RECENT_SCORE"),
         "scoreSortType": Enum("ASC", "DESC"),
         "scoreRangeStart": Field(kind="int"),
