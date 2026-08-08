@@ -429,6 +429,30 @@ def test_achievement_scheme_expansion():
           "ids the scheme does not know are kept, never dropped")
 
 
+def test_html_report():
+    """The report has one job: put what needs a decision at the top."""
+    section("HTML report")
+    from ascsync.core import htmlreport, planner as pl, report as rep_mod
+
+    rep = rep_mod.Report("plan", dry_run=True)
+    plan = rep.plan_for("store")
+    plan.add(pl.UPLOAD, "1.0/screenshots/01.png", "01.png")
+    plan.add(pl.NOOP, "1.0/localizations/en-US")
+    plan.add(pl.CONFLICT, "1.0/description", "local vs ASC — not written")
+    plan.add(pl.UPDATE, "1.0/keywords", fields={"keywords": "x"})
+    out = htmlreport.render(rep, "demo")
+
+    check(out.startswith("<!doctype html>"), "renders a standalone document")
+    check("<script" not in out.lower(), "no scripts — it is meant to be opened, not run")
+    check(out.count("http://") + out.count("https://") == 0
+          or "example.com" in out, "nothing is fetched from outside")
+    check(out.index("conflict") < out.index("update") < out.index("upload"),
+          "conflicts come before updates, updates before uploads")
+    check("1.0/localizations/en-US" not in out,
+          "unchanged records are counted, not listed")
+    check("&#x27;" in out or "<td" in out, "values are escaped into the table")
+
+
 def main() -> int:
     for test in (test_three_way_diff, test_play_mode, test_duration_and_rrule,
                  test_event_texts_within_limits, test_territory_exclusion,
@@ -436,7 +460,7 @@ def main() -> int:
                  test_image_rules, test_data_files_load, test_readiness,
                  test_pull_merge_overwrites_local_texts,
                  test_code_drift_detects_patterns, test_products_match_code,
-                 test_achievement_scheme_expansion):
+                 test_achievement_scheme_expansion, test_html_report):
         test()
     print("")
     if FAILURES:

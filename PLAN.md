@@ -71,12 +71,14 @@ Without these it is a shared folder, not a product.
 
 ## Stage 3 — removing friction
 
-- [ ] **`ascsync diff` as a readable report.** `plan` prints a list. For a
-      human who has to review 48 screenshots and 90 text fields, an HTML page
-      with before/after is far better — and it can be attached as a CI artifact
-      or linked from a pull request.
-- [ ] **Image preview.** A contact sheet per screenshot set, so you see what
-      goes up before it goes up.
+- [x] **A readable report.** `plan --html FILE` and `push --html FILE` render
+      the plan as one self-contained page: grouped by domain, conflicts and
+      drift first, images embedded as data URIs. No scripts and no external
+      requests, so it survives being attached to a CI run or a pull request.
+- [x] **Image preview.** Part of the HTML report: every upload it plans is
+      shown as a thumbnail. Pillow shrinks them when it is installed; without
+      it the originals are embedded, because an optional dependency should not
+      decide whether a report can be produced.
 - [ ] **Event calendar.** A timeline of dates with publication and review
       deadlines. Precisely the arithmetic people get wrong.
 - [ ] **Generate the schema from the API.** The field declarations are

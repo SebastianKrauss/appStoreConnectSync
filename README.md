@@ -155,7 +155,7 @@ does the typing for you.
 | `ascsync doctor` | access, role, rate limit, app and version state |
 | `ascsync pull [--domain …]` | ASC state into `data/` (merged) **and** `.snapshot/` |
 | `ascsync pull --snapshot-only` | `.snapshot/` only; `data/` untouched |
-| `ascsync plan [--domain …]` | three-way diff, writes nothing, exit 2 on drift |
+| `ascsync plan [--domain …] [--html FILE]` | three-way diff, writes nothing, exit 2 on drift |
 | `ascsync push [--domain …] --yes` | write; without `--yes` it is a dry run |
 | `ascsync validate [--domain …]` | offline: limits, assets, languages, source cross-check |
 | `ascsync validate --readiness` | additionally: what **submission** requires |
@@ -169,6 +169,12 @@ Domains for `--domain`: `store`, `gamecenter`, `iap`, `subscriptions`,
 `events`, `accessibility`, `pricing`, `privacy`, `pages`. Further filters:
 `--only <key>` (repeatable),
 `--only-locale de-DE`, `--version 1.0`, `--skip-assets`.
+
+`--html` writes the same plan as a page instead of a list: grouped by domain,
+conflicts and drift first, counts up top, and every screenshot it would upload
+shown rather than named. One self-contained file — no scripts, no external
+requests — so it can be attached to a CI run or linked from a pull request.
+Four hundred actions are unreadable in a terminal and fine on a page.
 
 Exit codes: `0` all good · `1` error · `2` drift, conflict or overhang found.
 A nightly read-only report is just `ascsync plan` plus a check for exit 2;

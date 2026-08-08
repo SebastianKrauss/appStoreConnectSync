@@ -5,7 +5,8 @@
   ascsync doctor                       auth, role, rate limit, app/version state
   ascsync pull   [--domain …] [--all]  ASC state into data/ + .snapshot/
                  [--snapshot-only]     .snapshot/ only, data/ left untouched
-  ascsync plan   [--domain …]          three-way diff, writes nothing (exit 2 on drift)
+  ascsync plan   [--domain …] [--html report.html]
+                                       three-way diff, writes nothing (exit 2 on drift)
   ascsync push   [--domain …] --yes    write (WITHOUT --yes: dry run)
   ascsync validate [--domain …]        offline: limits, assets, languages, code drift
   ascsync events generate [--ahead 12w]  occurrence drafts + asset to-dos
@@ -28,7 +29,8 @@ import sys
 
 from ascsync.core import assets as assetlib          # noqa: E402
 from ascsync.core import client as clientlib         # noqa: E402
-from ascsync.core import domains, paths, planner, report, validate  # noqa: E402
+from ascsync.core import (domains, htmlreport, paths, planner, report,  # noqa: E402
+                          validate)
 from ascsync.core.auth import MissingCredentials, missing_env       # noqa: E402
 from ascsync.core.engine import Engine               # noqa: E402
 from ascsync.generators import leaderboard_events    # noqa: E402
@@ -216,6 +218,9 @@ def _run_apply(args, dry_run: bool, command: str) -> int:
     lock.save()
     rep.summary()
     rep.write_json()
+    if getattr(args, "html", None):
+        path = htmlreport.write(rep, args.html, title=f"ascsync {command}")
+        print(f"Report: {paths.rel_to_asc(path)}")
     return rep.exit_code()
 
 
@@ -440,6 +445,8 @@ def main(argv=None) -> int:
     p_pull.set_defaults(func=cmd_pull)
 
     p_plan = sub.add_parser("plan", help="three-way diff, writes nothing")
+    p_plan.add_argument("--html", metavar="FILE",
+                        help="also write a readable report (images included)")
     add_domain_args(p_plan)
     p_plan.set_defaults(func=cmd_plan)
 
@@ -450,6 +457,8 @@ def main(argv=None) -> int:
                         help="include availability and prices")
     p_push.add_argument("--allow-pages", action="store_true",
                         help="include custom product pages")
+    p_push.add_argument("--html", metavar="FILE",
+                        help="also write a readable report (images included)")
     p_push.set_defaults(func=cmd_push)
 
     p_validate = sub.add_parser("validate", help="check offline")
