@@ -10,6 +10,7 @@
   ascsync push   [--domain …] --yes    write (WITHOUT --yes: dry run)
   ascsync validate [--domain …]        offline: limits, assets, languages, code drift
   ascsync events generate [--ahead 12w]  occurrence drafts + asset to-dos
+  ascsync events calendar [--weeks 26]   submission, publication and run dates
   ascsync privacy publish [--yes]      publish app privacy (its own step)
   ascsync submit --version 1.0 | --event <ref> [--yes]
   ascsync releases [--yes]             release achievements/leaderboards
@@ -350,6 +351,13 @@ def cmd_validate(args) -> int:
     return 1 if problems else 0
 
 
+def cmd_events_calendar(args) -> int:
+    from ascsync.generators import event_calendar
+    for line in event_calendar.render(weeks=args.weeks):
+        print(line)
+    return 0
+
+
 def cmd_events_generate(args) -> int:
     ahead = parse_ahead(args.ahead)
     territories = None
@@ -532,6 +540,12 @@ def main(argv=None) -> int:
 
     p_events = sub.add_parser("events", help="event tools")
     events_sub = p_events.add_subparsers(dest="events_command", required=True)
+    p_calendar = events_sub.add_parser(
+        "calendar", help="when each event submits, publishes and runs")
+    p_calendar.add_argument("--weeks", type=int, default=12,
+                            help="how far ahead to look (default: 12)")
+    p_calendar.set_defaults(func=cmd_events_calendar)
+
     p_generate = events_sub.add_parser("generate", help="generate occurrence drafts")
     p_generate.add_argument("--ahead", default="12w", help="lead time, e.g. 12w or 84d")
     p_generate.set_defaults(func=cmd_events_generate)

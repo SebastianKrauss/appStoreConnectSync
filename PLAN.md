@@ -46,9 +46,6 @@ which is enough in practice, but you have to know it.
 
 ## Friction
 
-- [ ] **Event calendar.** A timeline of event dates with their publication and
-      review deadlines. Precisely the arithmetic people get wrong, and the
-      reason a launch date slips.
 - [ ] **Generate the field declarations from Apple's OpenAPI spec.** They are
       hand-maintained today, and four of the six bugs the first push exposed
       were wrong field or relationship names — exactly what a generated schema

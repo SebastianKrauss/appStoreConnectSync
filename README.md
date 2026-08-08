@@ -162,6 +162,7 @@ does the typing for you.
 | `ascsync validate --readiness` | additionally: what **submission** requires |
 | `ascsync achievements template` | achievement scaffold from a declared id scheme |
 | `ascsync events generate --ahead 12w` | event drafts, one per leaderboard occurrence |
+| `ascsync events calendar [--weeks 26]` | when each event submits, publishes and runs |
 | `ascsync releases --yes` | release achievements/leaderboards for publication |
 | `ascsync privacy publish --yes` | publish app privacy (deliberately its own step) |
 | `ascsync submit --version 1.0 [--send] --yes` | submit a version or event for review |

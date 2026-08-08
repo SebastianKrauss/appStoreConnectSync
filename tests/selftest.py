@@ -563,6 +563,40 @@ def test_two_projects_side_by_side():
         shutil.rmtree(second, ignore_errors=True)
 
 
+def test_event_calendar():
+    """The arithmetic people get wrong, checked."""
+    section("Event calendar")
+    from ascsync.generators import event_calendar as cal
+
+    now = datetime(2026, 3, 1, tzinfo=timezone.utc)
+
+    def event(name, starts_in, runs=7, publishes_before=7, state="DRAFT"):
+        start = now + timedelta(days=starts_in)
+        return {"referenceName": name, "readonly": {"eventState": state},
+                "territorySchedules": [{
+                    "publishStart": (start - timedelta(days=publishes_before)).isoformat(),
+                    "eventStart": start.isoformat(),
+                    "eventEnd": (start + timedelta(days=runs)).isoformat()}]}
+
+    items = [event("late", starts_in=9), event("fine", starts_in=40),
+             event("clash", starts_in=42), event("past", starts_in=-30),
+             event("far", starts_in=400)]
+    entries = cal.rows(items, now=now, weeks=12)
+    names = [e["reference"] for e in entries]
+
+    check("past" not in names, "an event that already ended is not shown")
+    check("far" not in names, "and neither is one beyond the horizon")
+    check(names == sorted(names, key=lambda n: {"late": 0, "fine": 1, "clash": 2}[n]),
+          f"sorted by start -> {names}")
+    late = [e for e in entries if e["late"]]
+    check([e["reference"] for e in late] == ["late"],
+          "only the event whose review slack has run out is flagged")
+    check(entries[0]["submitBy"] < entries[0]["publish"] < entries[0]["start"],
+          "submit before publish before start — in that order")
+    check(cal.overlaps(entries) == [("fine", "clash")],
+          f"overlapping runs are found -> {cal.overlaps(entries)}")
+
+
 def main() -> int:
     for test in (test_three_way_diff, test_play_mode, test_duration_and_rrule,
                  test_event_texts_within_limits, test_territory_exclusion,
@@ -572,7 +606,7 @@ def main() -> int:
                  test_code_drift_detects_patterns, test_products_match_code,
                  test_achievement_scheme_expansion, test_html_report,
                  test_dry_run_receipt_and_write_log, test_error_guidance,
-                 test_two_projects_side_by_side):
+                 test_two_projects_side_by_side, test_event_calendar):
         test()
     print("")
     if FAILURES:
