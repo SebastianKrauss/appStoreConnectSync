@@ -54,22 +54,24 @@ ascsync push --domain <d> --yes --require-dry-run   # write
 ascsync push --domain <d> --json # check: this must find nothing left to do
 ```
 
-Use `--json` throughout. `plan`, `push` and `validate` all take it: the report
-goes to stdout, the prose to stderr, and you never have to parse a sentence.
+**The last line is the one that gets skipped.** A push that finds work again on
+the second run is not finished — it will repeat that work every time. Run it,
+and report what it said.
 
-Use `--require-dry-run` on the write. It walks once without writing,
-fingerprints what it would change, and refuses unless a dry run has already
-recorded exactly that plan. If you changed a field between showing the plan and
-writing it, that refusal is correct — the plan the user approved is not the
-plan that would run. Show the new one and ask again.
+The flags, and why each is there:
 
-`--html plan.html` renders the same plan as a page with the images in it. When
-a user has to approve forty-eight screenshots, send them that instead of four
-hundred lines.
+`--json` on `plan`, `push` and `validate` puts the report on stdout and the
+prose on stderr. You never have to parse a sentence.
 
-That last step is the most important one and the most often skipped. A push
-that finds work again on the second run is not finished — it will repeat that
-work every time. Check it, and report the result.
+`--require-dry-run` walks once without writing, fingerprints what it would
+change, and refuses unless a dry run already recorded exactly that plan. If you
+edited a field between showing the plan and writing it, that refusal is
+correct: the plan the user approved is not the plan that would run. Show the
+new one and ask again.
+
+`--html plan.html` renders the plan as a page with the images in it. When
+somebody has to approve forty-eight screenshots, send them that rather than
+four hundred lines.
 
 Order on a first run: `store` → `gamecenter` → `iap` → `releases` → `events`.
 Releases have to come after the Game Center push, or there is nothing to
