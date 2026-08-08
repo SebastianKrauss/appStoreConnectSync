@@ -34,7 +34,7 @@ _DURATION = re.compile(
 def parse_duration(value: str) -> timedelta:
     match = _DURATION.match((value or "").strip().upper())
     if not match:
-        raise SystemExit(f"Unverstandene Dauer '{value}' (erwartet z. B. P7D, PT15M).")
+        raise SystemExit(f"Cannot read duration '{value}' (expected e.g. P7D, PT15M).")
     parts = {k: int(v) for k, v in match.groupdict(default="0").items()}
     return timedelta(days=parts["days"], hours=parts["hours"],
                      minutes=parts["minutes"], seconds=parts["seconds"])
@@ -49,7 +49,7 @@ def parse_datetime(value: str) -> datetime:
             return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
         except ValueError:
             continue
-    raise SystemExit(f"Unverstandenes Datum '{value}'.")
+    raise SystemExit(f"Cannot read date '{value}'.")
 
 
 def expand_rrule(start: datetime, rule: str, until: datetime) -> List[datetime]:
@@ -137,7 +137,7 @@ def generate(ahead_days: int = 84, now: Optional[datetime] = None,
         board = boards.get(board_id)
         if not board:
             messages.append(f"[warn] {metric}: leaderboard '{board_id}' is not in "
-                            f"data/gamecenter/leaderboards.json — erst "
+                            f"data/gamecenter/leaderboards.json — run "
                             f"'ascsync pull --domain gamecenter' first.")
             continue
         if not board.get("recurrenceStartDate"):
@@ -184,7 +184,7 @@ def _build_event(reference: str, metric: str, start: datetime, duration: timedel
                events_res.MAX_PUBLISH_LEAD_DAYS)
     publish = start - timedelta(days=lead)
     if duration.days > events_res.MAX_DURATION_DAYS:
-        messages.append(f"[warn] {reference}: Dauer {duration.days} Tage > "
+        messages.append(f"[warn] {reference}: duration {duration.days} days > "
                         f"{events_res.MAX_DURATION_DAYS} — ASC will refuse it.")
 
     schedule = {
@@ -275,9 +275,8 @@ def _check_quota(events: List[dict], now: datetime) -> List[str]:
     """Quota guard: better to stop here than build drafts ASC will reject."""
     messages: List[str] = []
     if len(events) > events_res.MAX_APPROVED:
-        messages.append(f"[stopp] {len(events)} Events — ASC nimmt hoechstens "
-                        f"{events_res.MAX_APPROVED} approved. Shorten the lead "
-                        f"--ahead kuerzen.")
+        messages.append(f"[stop] {len(events)} events — ASC accepts at most "
+                        f"{events_res.MAX_APPROVED} approved. Shorten --ahead.")
     windows = []
     for event in events:
         for schedule in event.get("territorySchedules") or []:
@@ -295,8 +294,8 @@ def _check_quota(events: List[dict], now: datetime) -> List[str]:
     published = sum(1 for start, end in windows
                     if start - timedelta(days=events_res.MAX_PUBLISH_LEAD_DAYS) <= now < end)
     if published > events_res.MAX_PUBLISHED:
-        messages.append(f"[stopp] {published} gleichzeitig veroeffentlichte Events — "
-                        f"ASC erlaubt {events_res.MAX_PUBLISHED}.")
+        messages.append(f"[stop] {published} events published at once — "
+                        f"ASC allows {events_res.MAX_PUBLISHED}.")
     return messages
 
 

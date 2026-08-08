@@ -82,7 +82,7 @@ def parse_path(d: str) -> List[List[Point]]:
                 raise ValueError("path ends in the middle of a command")
             kind, value = tokens[index]
             if kind != "num":
-                raise ValueError(f"Zahl erwartet, {value!r} gefunden")
+                raise ValueError(f"expected a number, found {value!r}")
             values.append(value)
             index += 1
         return values

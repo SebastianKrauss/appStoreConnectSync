@@ -22,7 +22,7 @@ CARD_RULE = ImageRule(min_width=1920, min_height=1080, max_width=3840,
 DETAIL_RULE = ImageRule(min_width=1080, min_height=1920, max_width=2160,
                         max_height=3840, aspect=9 / 16.0, allow_alpha=False)
 
-# Aufloesungs-Reihenfolge: <metrik>-<spielart> -> <metrik> -> default
+# Resolution order: <metric>-<play mode> -> <metric> -> default
 _CARD_PATHS = ("events/{assetVariant}/{locale}/card.png",
                "events/{metric}/{locale}/card.png",
                "events/default/{locale}/card.png")

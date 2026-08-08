@@ -28,10 +28,10 @@ def ensure_submission(ctx: domains.Context, plan: planner.Plan) -> Optional[str]
     existing = open_submission(ctx)
     if existing:
         plan.add(planner.NOOP, "reviewSubmission",
-                 f"offene Einreichung {existing['id']} "
+                 f"open submission {existing['id']} "
                  f"({(existing.get('attributes') or {}).get('state')})")
         return existing["id"]
-    plan.add(planner.CREATE, "reviewSubmission", "neue Einreichung",
+    plan.add(planner.CREATE, "reviewSubmission", "new submission",
              executed=not ctx.client.dry_run)
     created = ctx.client.post("/v1/reviewSubmissions", {
         "data": {

@@ -73,10 +73,11 @@ def ordered_files(directory: str, extensions) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Offline-Pruefung
+# Offline checks
 # ---------------------------------------------------------------------------
 def image_size(path: str) -> Optional[Tuple[int, int, bool]]:
-    """(Breite, Hoehe, hat_alpha) ohne Fremdbibliothek; None bei Videos/unbekannt."""
+    """(width, height, has_alpha) without a third-party library; None for
+    videos and anything unrecognised."""
     ext = os.path.splitext(path)[1].lower()
     try:
         with open(path, "rb") as f:
@@ -223,7 +224,7 @@ def upload_asset(client, api_type: str, api_version: str, parent_rel: str,
             "relationships": {parent_rel: {"data": {"type": parent_type, "id": parent_id}}},
         }
     })
-    if reserved is None:      # Trockenlauf
+    if reserved is None:      # dry run
         return None
     asset = reserved["data"]
     for operation in asset["attributes"].get("uploadOperations") or []:

@@ -31,7 +31,7 @@ class Engine:
         self.only_locales = set(only_locales or ())
 
     # =======================================================================
-    # Lesen (pull)
+    # Reading (pull)
     # =======================================================================
     def fetch(self, resource: Resource, parent_type: str = "", parent_id: str = "",
               parent_version: str = "v1", app_id: str = "") -> List[dict]:

@@ -119,7 +119,7 @@ def _check_item(resource: Resource, item: dict, path: str, locales: List[str],
                 if locale not in have:
                     problems.append(f"{path}/{child.doc_key()}: {locale} fehlt")
         if readiness and child.singleton and not children:
-            problems.append(f"{path}/{child.doc_key()}: Block fehlt — "
+            problems.append(f"{path}/{child.doc_key()}: block missing — "
                             f"needed for submission ({child.type})")
         child_fmt = dict(item_fmt)
         child_fmt["parent_key"] = item_fmt["key"]
@@ -146,7 +146,7 @@ def _check_asset(spec, fmt: dict, path: str) -> List[str]:
                 return []
             return [f"{path}/{spec.name}: file missing (assets/{expected})"]
         return [f"{path}/{spec.name}: {p}" for p in assetlib.check_file(local, spec.rule)]
-    # Geordnete Mengen: je Geraeteklassen-Ordner
+    # Ordered sets: one directory per display type
     try:
         base = paths.asset_path(spec.path.format(**fmt))
     except KeyError:
@@ -176,8 +176,8 @@ def _check_display_type(spec, display_type: str, files, path: str) -> List[str]:
     from ..resources.app_store import SCREENSHOT_SIZES
     if spec.name != "screenshots" or display_type not in SCREENSHOT_SIZES:
         if spec.name == "screenshots":
-            return [f"{path}/{spec.name}/{display_type}: unbekannte Geraeteklasse — "
-                    f"bekannt: {', '.join(sorted(SCREENSHOT_SIZES))}"]
+            return [f"{path}/{spec.name}/{display_type}: unknown display type — "
+                    f"known: {', '.join(sorted(SCREENSHOT_SIZES))}"]
         return []
     allowed = SCREENSHOT_SIZES[display_type]
     problems = []
@@ -197,7 +197,7 @@ def _slug(key: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# App-Sprachen vs. Store-Sprachen
+# App languages vs. store languages
 # ---------------------------------------------------------------------------
 def validate_app_languages(locales: List[str]) -> List[str]:
     directory = labels_dir()

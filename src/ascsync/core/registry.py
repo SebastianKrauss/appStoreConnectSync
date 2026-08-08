@@ -137,8 +137,8 @@ class WarnOnMismatch:
 # ---------------------------------------------------------------------------
 @dataclass
 class Resource:
-    type: str                                  # JSON:API-Typ = URL-Segment
-    key: str                                   # natuerlicher Schluessel (Attribut)
+    type: str                                  # JSON:API type = URL segment
+    key: str                                   # natural key (an attribute)
     writable: Dict[str, Field] = dc_field(default_factory=dict)
     readonly: Tuple[str, ...] = ()
     children: Tuple["Resource", ...] = ()
@@ -154,9 +154,9 @@ class Resource:
     creatable: bool = True
     deletable: bool = False        # delete overhangs in ASC? (ordered sets only)
     editable_states: Optional[frozenset] = None   # state gate on the resource's own state
-    singleton: bool = False        # 1:1-Beziehung ohne eigenen Schluessel
+    singleton: bool = False        # 1:1 relationship with no key of its own
 
-    # -- Pfade -------------------------------------------------------------
+    # -- paths -------------------------------------------------------------
     def collection_path(self) -> str:
         return f"/{self.api_version}/{self.type}"
 
@@ -186,7 +186,7 @@ class Domain:
     data_file: str                 # relativ zu data/, z. B. "gamecenter/achievements.json"
     resource: Resource
     title: str = ""
-    push_flag: str = ""            # zusaetzliches CLI-Flag noetig (z. B. Preise)
+    push_flag: str = ""            # needs an extra CLI flag (e.g. prices)
     notes: str = ""
     group: str = ""                # CLI domain name (several files per group)
     pull_fn: Optional[Callable] = None

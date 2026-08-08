@@ -96,7 +96,7 @@ def publish(ctx: domains.Context, plan: planner.Plan) -> None:
 
 PRIVACY_DOMAIN = Domain(
     name="privacy", group="privacy", data_file="privacy.json",
-    resource=USAGES, title="App-Privacy (Datennutzung)",
+    resource=USAGES, title="App privacy (data usage)",
     pull_fn=_pull, apply_fn=_apply,
 )
 

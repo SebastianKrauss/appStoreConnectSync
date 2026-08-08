@@ -1,14 +1,14 @@
-# lokale Laufzeit-Artefakte, nicht ins Repo
+# local runtime artefacts, not for the repository
 .venv/
 .requests.log
 .report.json
 __pycache__/
 .DS_Store
 
-# Zugangsdaten gehoeren NIE ins Repo
+# credentials NEVER belong in the repository
 *.p8
 
-# Build-Artefakte
+# build artefacts
 *.egg-info/
 build/
 dist/

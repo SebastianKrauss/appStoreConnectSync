@@ -167,7 +167,7 @@ def cmd_validate(args) -> int:
     locales = paths.load_locales()
     problems = []
     print("Offline validation (no API access)"
-          + (" — inkl. Einreichungs-Reife" if args.readiness else ""))
+          + (" — including submission readiness" if args.readiness else ""))
     for domain in select(args.domain):
         found = validate.validate_domain(domain, locales,
                                          check_assets=not args.skip_assets,
@@ -179,7 +179,7 @@ def cmd_validate(args) -> int:
         problems.extend(found)
     language_problems = validate.validate_app_languages(locales)
     if language_problems:
-        print("\n== Sprachen ==")
+        print("\n== Languages ==")
         for p in language_problems:
             print(f"  - {p}")
         problems.extend(language_problems)
@@ -204,7 +204,7 @@ def cmd_validate(args) -> int:
         event_problems = validate.validate_events(
             domains.doc_items(event_doc, events_res.EVENTS))
         if event_problems:
-            print("\n== Event-Fristen/Kontingente ==")
+            print("\n== Event deadlines and quotas ==")
             for p in event_problems:
                 print(f"  - {p}")
             problems.extend(event_problems)
@@ -212,7 +212,7 @@ def cmd_validate(args) -> int:
     if args.readiness:
         structural = validate.validate_readiness(locales)
         if structural:
-            print("\n== Einreichungs-Reife ==")
+            print("\n== Submission readiness ==")
             for p in structural:
                 print(f"  - {p}")
             problems.extend(structural)

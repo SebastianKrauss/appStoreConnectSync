@@ -12,7 +12,7 @@ from ..core.registry import (AssetSpec, Bool, Date, Domain, Enum, Field,
 
 PLATFORM = "IOS"
 
-# In diesen Zustaenden laesst ASC Metadaten-Aenderungen zu.
+# ASC allows metadata changes only while the version is in one of these states.
 EDITABLE_STATES = frozenset({"PREPARE_FOR_SUBMISSION", "METADATA_REJECTED",
                              "DEVELOPER_REJECTED", "REJECTED", "INVALID_BINARY",
                              "READY_FOR_REVIEW", "WAITING_FOR_EXPORT_COMPLIANCE"})
@@ -69,7 +69,7 @@ PREVIEWS = AssetSpec(
 )
 
 # ---------------------------------------------------------------------------
-# App-Info: Name, Untertitel, Datenschutz-Angaben
+# App info: name, subtitle, privacy details
 # ---------------------------------------------------------------------------
 APP_INFO_LOCALIZATIONS = Resource(
     type="appInfoLocalizations",
@@ -87,7 +87,7 @@ APP_INFO_LOCALIZATIONS = Resource(
 )
 
 # ---------------------------------------------------------------------------
-# Versionen: Texte, Screenshots, Previews, Review-Angaben
+# Versions: texts, screenshots, previews, review details
 # ---------------------------------------------------------------------------
 VERSION_LOCALIZATIONS = Resource(
     type="appStoreVersionLocalizations",
@@ -259,7 +259,7 @@ def sync_categories(ctx: domains.Context, plan: planner.Plan, info_id: str) -> N
 
 
 # ---------------------------------------------------------------------------
-# Treiber Versionen
+# Versions driver
 # ---------------------------------------------------------------------------
 def _pull_versions(engine, ctx: domains.Context, domain: Domain) -> List[dict]:
     return engine.fetch(VERSIONS, app_id=ctx.app_id)
@@ -306,13 +306,13 @@ def resolve_target_version(ctx: domains.Context) -> Optional[dict]:
 
 APP_INFO_DOMAIN = Domain(
     name="app_info", group="store", data_file="store/app_info.json",
-    resource=APP_INFO_LOCALIZATIONS, title="App-Name, Untertitel, Kategorien",
+    resource=APP_INFO_LOCALIZATIONS, title="App name, subtitle, categories",
     pull_fn=_pull_app_info, apply_fn=_apply_app_info,
 )
 
 VERSIONS_DOMAIN = Domain(
     name="versions", group="store", data_file="store/versions.json",
-    resource=VERSIONS, title="Versionen, Texte, Screenshots, Previews, Review",
+    resource=VERSIONS, title="Versions, texts, screenshots, previews, review",
     pull_fn=_pull_versions, apply_fn=_apply_versions,
 )
 

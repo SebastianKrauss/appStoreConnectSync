@@ -143,7 +143,7 @@ LEADERBOARD_SETS = Resource(
 
 
 # ---------------------------------------------------------------------------
-# Parent aufloesen + Treiber
+# Resolving the parent, plus the drivers
 # ---------------------------------------------------------------------------
 def resolve_parent(ctx: domains.Context) -> Tuple[str, str]:
     """(parent_type, parent_id) — gameCenterDetails or gameCenterGroups."""
@@ -188,21 +188,21 @@ def _apply(engine, ctx: domains.Context, domain: Domain, plan: planner.Plan) -> 
 ACHIEVEMENTS_DOMAIN = Domain(
     name="achievements", group="gamecenter",
     data_file="gamecenter/achievements.json",
-    resource=ACHIEVEMENTS, title="Game-Center-Achievements",
+    resource=ACHIEVEMENTS, title="Game Center achievements",
     pull_fn=_pull, apply_fn=_apply,
 )
 
 LEADERBOARDS_DOMAIN = Domain(
     name="leaderboards", group="gamecenter",
     data_file="gamecenter/leaderboards.json",
-    resource=LEADERBOARDS, title="Game-Center-Bestenlisten",
+    resource=LEADERBOARDS, title="Game Center leaderboards",
     pull_fn=_pull, apply_fn=_apply,
 )
 
 LEADERBOARD_SETS_DOMAIN = Domain(
     name="leaderboard_sets", group="gamecenter",
     data_file="gamecenter/leaderboard_sets.json",
-    resource=LEADERBOARD_SETS, title="Bestenlisten-Gruppen",
+    resource=LEADERBOARD_SETS, title="Leaderboard sets",
     pull_fn=_pull, apply_fn=_apply,
 )
 

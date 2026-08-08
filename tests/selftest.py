@@ -57,7 +57,7 @@ def test_three_way_diff():
     for desired, snapshot, remote, have, expected in cases:
         got = differ.classify_field(desired, snapshot, remote, have)
         check(got == expected,
-              f"{desired!r}/{snapshot!r}/{remote!r} -> {got} (erwartet {expected})")
+              f"{desired!r}/{snapshot!r}/{remote!r} -> {got} (expected {expected})")
 
 
 def test_play_mode():
@@ -139,9 +139,9 @@ def test_territory_exclusion():
     used = event["territorySchedules"][0].get("territories")
     check(used == ["DEU", "USA", "ESP"], f"RUS filtered out -> {used}")
 
-    ohne, msgs = gen._build_event("t", "score", start, timedelta(days=7), templates,
-                                  templates["defaults"], [])
-    check("territories" not in ohne["territorySchedules"][0]
+    without, msgs = gen._build_event("t", "score", start, timedelta(days=7), templates,
+                                     templates["defaults"], [])
+    check("territories" not in without["territorySchedules"][0]
           and any("no territories" in m for m in msgs),
           "without an availability list it warns instead of guessing")
 

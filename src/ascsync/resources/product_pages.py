@@ -48,7 +48,7 @@ PAGE_VERSIONS = Resource(
     parent_type="appCustomProductPages",
     writable={},
     readonly=("state", "deepLink"),
-    creatable=False,          # Versionen legt ASC an
+    creatable=False,          # ASC creates the versions
     children=(PAGE_LOCALIZATIONS,),
 )
 

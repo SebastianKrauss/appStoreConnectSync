@@ -30,7 +30,7 @@ class Context:
     app_id: str
     app: dict
     locales: List[str]
-    version: Optional[str] = None        # gewuenschter versionString (--version)
+    version: Optional[str] = None        # wanted versionString (--version)
     flags: Dict[str, bool] = field(default_factory=dict)
     cache: Dict[str, object] = field(default_factory=dict)
 
@@ -142,7 +142,7 @@ def _merge_children(target: dict, old: dict, new: dict, resource: Resource) -> N
 
 
 # ---------------------------------------------------------------------------
-# Generische Treiber
+# Generic drivers
 # ---------------------------------------------------------------------------
 PullFn = Callable[..., List[dict]]
 
