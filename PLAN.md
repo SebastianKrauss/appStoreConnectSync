@@ -28,15 +28,10 @@ which is enough in practice, but you have to know it.
 
 ## Usable by more people
 
-- [ ] **Error messages that help.** Today the API's answer is often all you
-      get. The dozen most common failures deserve a sentence about what to do —
-      the same standard the code comments already meet.
-- [ ] **Several apps in one place.** `ASCSYNC_PROJECT` is meant to cover it,
-      one directory per app. Nobody has proven it holds up, and the
-      documentation does not show it.
-- [ ] **Several keys or teams.** Exactly one set of environment variables
-      today. Too little for an agency with several clients, or for anyone who
-      wants a separate key for CI without swapping their shell.
+- [ ] **Several keys or teams.** Two apps in one account share a key, and that
+      works today. Two *accounts* mean swapping three environment variables by
+      hand — fine for one person, thin for an agency. Named profiles in a
+      config file would fix it.
 
 ## Dependable
 

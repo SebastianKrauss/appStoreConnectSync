@@ -19,6 +19,32 @@ try:
 except ImportError:  # only an error once the API is actually used
     requests = None
 
+# Failure -> what to do about it. Matched against the raw response body, most
+# specific first. Everything in this list cost somebody an hour once.
+GUIDANCE = [
+    ("is not an attribute on the resource",
+     "The field does not exist on that resource. Fix the declaration in "
+     "resources/, not the data — '.snapshot/' after a pull is the truth about "
+     "which fields ASC knows."),
+    ("is not a relationship on the resource",
+     "Wrong relationship name in the declaration. Fetch the parent and read "
+     "its 'relationships' keys to see what it is really called."),
+    ("You must provide a value for the relationship",
+     "A create is missing its parent relationship. Reading works over "
+     "root_path without one, which is why this only ever shows up on the "
+     "first genuine create."),
+    ("is not a valid",
+     "An enum value ASC does not accept. The exact spelling is in the error; "
+     "correct the choices in the resource declaration."),
+    ("already exists",
+     "The push tried to create something that is already there — usually "
+     "because it could not see it. A missing 'list_rel' on a child resource "
+     "makes every existing record invisible."),
+    ("The provided entity includes an attribute with a value that has already",
+     "Something unique is taken: a locale twice, or a product id that exists "
+     "elsewhere in the account."),
+]
+
 API = "https://api.appstoreconnect.apple.com"
 RETRY_STATUS = (429, 500, 502, 503, 504)
 MAX_ATTEMPTS = 5
@@ -48,12 +74,33 @@ class ApiError(RuntimeError):
 
     def summary(self) -> str:
         if not self.details:
-            return (self.body or "")[:400]
+            return (self.body or "")[:400] + self.advice()
         out = []
         for e in self.details:
             out.append(" / ".join(x for x in (e.get("title"), e.get("detail"),
                                               (e.get("source") or {}).get("pointer")) if x))
-        return " | ".join(out)
+        return " | ".join(out) + self.advice()
+
+    def advice(self) -> str:
+        """A sentence about what to do — for the failures that actually happen.
+
+        Every entry here was paid for once. Apple's own message says what is
+        wrong and almost never says where to look, and "where to look" is the
+        difference between a two-minute fix and an afternoon.
+        """
+        for needle, hint in GUIDANCE:
+            if self.mentions(needle):
+                return f"\n      -> {hint}"
+        if self.status == 401:
+            return ("\n      -> The key was rejected. Check ASC_KEY_ID against the "
+                    "filename, and that the key still exists in ASC.")
+        if self.status == 403:
+            return ("\n      -> Authenticated but not allowed. The key's role is "
+                    "probably too low; content work needs App Manager.")
+        if self.status == 429:
+            return ("\n      -> Rate limited. 'ascsync doctor' shows what is left "
+                    "of this hour's budget.")
+        return ""
 
     def mentions(self, needle: str) -> bool:
         return needle.lower() in (self.body or "").lower()

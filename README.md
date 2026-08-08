@@ -235,8 +235,27 @@ directory; for the size check also add it to `SCREENSHOT_SIZES` in
 
 **Where content lives:** in the current working directory. One installed
 `ascsync` therefore serves any number of apps — one directory per app, one
-repository per directory. `ASCSYNC_PROJECT` names the directory explicitly,
-wherever you happen to stand.
+repository per directory:
+
+```bash
+cd ~/projects/one-store && ascsync plan      # com.example.one
+cd ~/projects/two-store && ascsync plan      # com.example.two
+```
+
+`ASCSYNC_PROJECT` names the directory explicitly, wherever you happen to
+stand — useful in CI, or when the store repository is not where you work:
+
+```bash
+ASCSYNC_PROJECT=~/projects/one-store ascsync validate
+```
+
+Nothing is shared between two projects: `data/`, `assets/`, `.snapshot/` and
+`assets.lock.json` all live inside their own directory. The self-test exercises
+two side by side rather than taking the claim on trust.
+
+Two apps in the same App Store Connect account use the same key, so the same
+three environment variables. Two *accounts* need two sets — export them per
+shell, or per CI job.
 
 ## Data format
 

@@ -11,6 +11,7 @@ the tool, not the contents of your project.
 """
 from __future__ import annotations
 
+import importlib
 import os
 import shutil
 import sys
@@ -499,6 +500,69 @@ def test_dry_run_receipt_and_write_log():
         shutil.rmtree(directory, ignore_errors=True)
 
 
+def test_error_guidance():
+    """Apple says what is wrong. These say where to look."""
+    section("Error guidance")
+    from ascsync.core.client import ApiError
+
+    def advice(detail, status=409):
+        body = '{"errors":[{"title":"t","detail":"%s"}]}' % detail
+        return ApiError("POST", "/v1/x", status, body).advice()
+
+    check("resources/" in advice("'foo' is not an attribute on the resource 'bar'"),
+          "an unknown attribute points at the declaration, not the data")
+    check("relationship" in advice("You must provide a value for the relationship 'app'").lower(),
+          "a missing parent relationship is named as such")
+    check("list_rel" in advice("An AppEventLocalization with this locale already exists."),
+          "'already exists' points at the reason it could not see the record")
+    check("App Manager" in ApiError("GET", "/v1/x", 403, "{}").advice(),
+          "403 names the role that would be enough")
+    check(advice("something entirely unfamiliar") == "",
+          "an unknown failure gets no invented advice")
+
+
+def test_two_projects_side_by_side():
+    """One installed ascsync, two apps — the claim, actually exercised."""
+    section("Two projects side by side")
+    first, second = tempfile.mkdtemp(), tempfile.mkdtemp()
+    previous = os.environ.get("ASCSYNC_PROJECT")
+    try:
+        for directory, bundle, langs in ((first, "com.example.one", ["en-US"]),
+                                         (second, "com.example.two", ["de-DE", "fr-FR"])):
+            os.makedirs(os.path.join(directory, "data"))
+            paths.write_json(os.path.join(directory, "data", "app.json"),
+                             {"bundleId": bundle, "idPrefix": bundle + "."})
+            paths.write_json(os.path.join(directory, "data", "locales.json"),
+                             {"locales": langs})
+
+        seen = {}
+        for directory in (first, second, first):
+            os.environ["ASCSYNC_PROJECT"] = directory
+            importlib.reload(paths)
+            paths.forget_app_config()
+            seen[directory] = (paths.load_app_config()["bundleId"],
+                               paths.load_locales(),
+                               paths.DATA_DIR)
+
+        check(seen[first][0] == "com.example.one" and seen[second][0] == "com.example.two",
+              "each directory keeps its own app")
+        check(seen[first][1] == ["en-US"] and seen[second][1] == ["de-DE", "fr-FR"],
+              "and its own languages")
+        check(seen[first][2] != seen[second][2],
+              "data/, assets/ and .snapshot/ never overlap between the two")
+        check(seen[first][2].startswith(first),
+              "coming back to the first project reads the first project again")
+    finally:
+        if previous is None:
+            os.environ.pop("ASCSYNC_PROJECT", None)
+        else:
+            os.environ["ASCSYNC_PROJECT"] = previous
+        importlib.reload(paths)
+        paths.forget_app_config()
+        shutil.rmtree(first, ignore_errors=True)
+        shutil.rmtree(second, ignore_errors=True)
+
+
 def main() -> int:
     for test in (test_three_way_diff, test_play_mode, test_duration_and_rrule,
                  test_event_texts_within_limits, test_territory_exclusion,
@@ -507,7 +571,8 @@ def main() -> int:
                  test_pull_merge_overwrites_local_texts,
                  test_code_drift_detects_patterns, test_products_match_code,
                  test_achievement_scheme_expansion, test_html_report,
-                 test_dry_run_receipt_and_write_log):
+                 test_dry_run_receipt_and_write_log, test_error_guidance,
+                 test_two_projects_side_by_side):
         test()
     print("")
     if FAILURES:
