@@ -10,6 +10,10 @@ content travels the same road as your code: visible in a diff, traceable in the
 log, recoverable from history — and reproducible, instead of clicked once and
 forgotten.
 
+The repository is `appStoreConnectSync`; the package, the command and the
+import are all `ascsync`. Same thing — the long name is what people search for,
+the short one is what you type.
+
 > Running it through an AI agent (recommended): [`AGENTS.md`](AGENTS.md).
 > What it still needs to become a product: [`PLAN.md`](PLAN.md).
 
