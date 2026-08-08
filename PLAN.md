@@ -48,12 +48,12 @@ Without these it is a shared folder, not a product.
 
 ## Stage 2 — dependable
 
-- [ ] **Test coverage beyond the self-test.** The self-test covers the subtle
-      parts (diff classification, occurrence expansion, asset resolution, merge
-      behaviour) and needs no credentials — but it has never seen the API. What
-      is missing are **recorded API responses**: capture real ones once,
-      anonymise them, and run `push`/`pull` against them. Only that catches the
-      class of bug the first real push exposed.
+- [x] **Recorded API responses.** `tests/test_replay.py` drives `pull` end to
+      end against a cassette of 111 real responses, with no credentials and no
+      network, and runs in CI. The recorder scrubs every free-text value and
+      renames the bundle id and app id, so the fixture carries structure and
+      nobody's copy. Still open: a cassette for `push`, which needs recording
+      against an account one is willing to write to.
 - [x] **CI.** Self-test plus `validate` on every push and pull request, across
       four Python versions, with no credentials involved — so a fork's pull
       request is checked as thoroughly as a branch. It also asserts that

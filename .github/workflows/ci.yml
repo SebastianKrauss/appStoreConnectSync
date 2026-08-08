@@ -24,6 +24,10 @@ jobs:
         run: pip install -e .
       - name: Self-test
         run: python tests/selftest.py
+      - name: Replay recorded API traffic
+        # Drives pull end to end against a cassette — no credentials, no
+        # network. This is the only test that sees real response bodies.
+        run: python tests/test_replay.py
       - name: Validate the shipped scaffold
         # The template data must stay loadable and within Apple's limits;
         # if it does not, every new user starts from something broken.

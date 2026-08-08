@@ -296,11 +296,31 @@ the section the check is simply skipped.
   `resources/subscriptions.py` — `.snapshot/` after a pull is the truth about
   the fields ASC knows.
 
-## Self-test
+## Tests
 
 ```bash
-.venv/bin/python tests/selftest.py
+.venv/bin/python tests/selftest.py     # offline reasoning: diff, limits, generators
+.venv/bin/python tests/test_replay.py  # replays recorded API traffic
 ```
 
-It runs against its own fixtures, not against `data/` — it tests the tool, not
-the contents of your project.
+Both run without credentials. The self-test works against its own fixtures
+rather than `data/` — it tests the tool, not the contents of your project.
+
+The replay test drives `pull` end to end against a **cassette**: real App Store
+Connect responses, recorded once and committed. That is the only place where
+paths, relationship names and the parsing of real bodies are exercised
+together, and it exists because the offline tests could not have caught a
+single one of the six bugs the first real push exposed.
+
+Record your own, for your own account:
+
+```bash
+ASCSYNC_CASSETTE=tests/cassettes/pull.json ASCSYNC_CASSETTE_MODE=record \
+    ascsync pull --snapshot-only
+```
+
+The recorder throws your content away before writing: every free-text value is
+replaced, and the bundle id and app id are renamed to `com.example.app`. What
+survives is structure — which is what the test is about. A cassette will never
+catch a typo in your app description; it will catch a field that does not
+exist.

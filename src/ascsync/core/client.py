@@ -10,6 +10,7 @@ import os
 import time
 from typing import Any, Optional
 
+from . import cassette as cassettelib
 from . import paths
 from .auth import TokenProvider
 
@@ -66,7 +67,12 @@ class Client:
         self.dry_run = dry_run
         self.verbose = verbose
         self.log_requests = log_requests
-        self.tokens = TokenProvider()
+        # Recorded traffic, if ASCSYNC_CASSETTE is set. Replaying needs no
+        # credentials and never opens a socket — that is what lets CI exercise
+        # pull and push without an API key.
+        self.cassette = cassettelib.from_environment()
+        replaying = bool(self.cassette) and self.cassette.mode != "record"
+        self.tokens = None if replaying else TokenProvider()
         self.session = requests.Session()
         # A push makes calls in the thousands. Without a bigger pool, requests
         # keeps opening new connections until the OS runs out of ephemeral
@@ -111,6 +117,14 @@ class Client:
 
     def _send(self, method: str, path: str, **kw):
         url = self._url(path)
+        if self.cassette and self.cassette.mode != "record":
+            found = self.cassette.find(method, path, kw.get("params"))
+            if found is None:
+                raise ApiError(method, path, 599,
+                               '{"errors":[{"title":"not in cassette",'
+                               '"detail":"record it or fix the request"}]}')
+            self.calls += 1
+            return cassettelib.Replayed(*found)
         last = None
         for attempt in range(MAX_ATTEMPTS):
             headers = dict(self._headers())
@@ -131,6 +145,9 @@ class Client:
                 continue
             self.calls += 1
             self._note_rate_limit(last)
+            if self.cassette and self.cassette.mode == "record":
+                self.cassette.record(method, path, kw.get("params"),
+                                     last.status_code, last.text)
             self._log(method, path, last.status_code, time.time() - started)
             if self.verbose:
                 print(f"  [http] {method} {path} -> {last.status_code}")
